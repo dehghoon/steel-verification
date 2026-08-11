@@ -95,7 +95,12 @@ function MomentArrow({ position, rotation = [0, 0, 0], label, value }: { positio
 
 export default function MemberViewerScene({ section, actions }: { section: SectionRecord; actions: DisplayActions }) {
   const [selected, setSelected] = useState(false);
-  const axial = actions.compressionKn > 0 ? -actions.compressionKn : actions.tensionKn;
+  const axial = actions.axialKn;
+  const compression = axial < 0;
+  const axialStart: [number, number, number] = compression ? [0, 3.63, 0] : [0, 2.28, 0];
+  const axialDirection: [number, number, number] = compression ? [0, -1, 0] : [0, 1, 0];
+  const axialState = compression ? "Compression" : "Tension";
+
   return (
     <div className="viewer interactiveViewer" onClick={() => setSelected(false)}>
       <Canvas shadows dpr={[1, 2]} camera={{ position: [6.2, 3.8, 7.2], fov: 40 }} onPointerMissed={() => setSelected(false)}>
@@ -105,11 +110,11 @@ export default function MemberViewerScene({ section, actions }: { section: Secti
         <directionalLight position={[-4, 3, -5]} intensity={0.8} />
         <group position={[0, 0.15, 0]} rotation={[0, -0.45, 0]}>
           <ParametricWColumn section={section} selected={selected} onSelect={() => setSelected(true)} />
-          <ForceArrow start={[0, 2.28, 0]} direction={[0, axial < 0 ? -1 : 1, 0]} label="N" value={`${Math.abs(axial).toFixed(2)} kN`} />
+          <ForceArrow start={axialStart} direction={axialDirection} label="P" value={`${axial.toFixed(2)} kN · ${axialState}`} />
           <ForceArrow start={[0, 2.28, 0]} direction={[-0.15, 0, 0.95]} label="V1" value={`${actions.shearMajorKn.toFixed(2)} kN`} />
           <ForceArrow start={[0, 2.28, 0]} direction={[0.95, 0, 0.15]} label="V2" value={`${actions.shearMinorKn.toFixed(2)} kN`} />
-          <MomentArrow position={[-0.5, 2.28, 0.62]} rotation={[Math.PI / 2, 0, 0.16]} label="M1" value={`${actions.momentMajorKnm.toFixed(2)} kN·m`} />
-          <MomentArrow position={[0.72, 2.28, 0.12]} rotation={[0, 0, Math.PI / 2]} label="M2" value={`${actions.momentMinorKnm.toFixed(2)} kN·m`} />
+          <MomentArrow position={[-0.5, 2.28, 0.62]} rotation={[Math.PI / 2, 0, 0.16]} label="M2" value={`${actions.momentMajorKnm.toFixed(2)} kN·m`} />
+          <MomentArrow position={[0.72, 2.28, 0.12]} rotation={[0, 0, Math.PI / 2]} label="M1" value={`${actions.momentMinorKnm.toFixed(2)} kN·m`} />
         </group>
         <Grid position={[0, -2.25, 0]} args={[12, 12]} cellSize={0.5} cellThickness={0.6} sectionSize={2} sectionThickness={1.2} fadeDistance={16} infiniteGrid />
         <OrbitControls makeDefault enableDamping dampingFactor={0.08} minDistance={5} maxDistance={13} target={[0, 0, 0]} />
@@ -118,11 +123,11 @@ export default function MemberViewerScene({ section, actions }: { section: Secti
       {selected && <aside className="columnInfoCard" onClick={(event) => event.stopPropagation()}>
         <div className="columnInfoHeading"><span>TOP END FORCES</span><strong>{section.designation}</strong></div>
         <dl>
-          <div><dt>N (axial)</dt><dd>{Math.abs(axial).toFixed(2)} kN</dd></div>
-          <div><dt>V1</dt><dd>{actions.shearMajorKn.toFixed(2)} kN</dd></div>
-          <div><dt>V2</dt><dd>{actions.shearMinorKn.toFixed(2)} kN</dd></div>
-          <div><dt>M1</dt><dd>{actions.momentMajorKnm.toFixed(2)} kN·m</dd></div>
-          <div><dt>M2</dt><dd>{actions.momentMinorKnm.toFixed(2)} kN·m</dd></div>
+          <div><dt>P (axial)</dt><dd>{axial.toFixed(2)} kN · {axialState}</dd></div>
+          <div><dt>V1 (major shear)</dt><dd>{actions.shearMajorKn.toFixed(2)} kN</dd></div>
+          <div><dt>V2 (minor shear)</dt><dd>{actions.shearMinorKn.toFixed(2)} kN</dd></div>
+          <div><dt>M2 (major moment)</dt><dd>{actions.momentMajorKnm.toFixed(2)} kN·m</dd></div>
+          <div><dt>M1 (minor moment)</dt><dd>{actions.momentMinorKnm.toFixed(2)} kN·m</dd></div>
         </dl>
       </aside>}
     </div>
