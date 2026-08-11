@@ -5,10 +5,10 @@ from app.models.api import ReportPreviewRequest, ReportPreviewResponse
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-def _build_report(request: ReportPreviewRequest, status: str) -> ReportPreviewResponse:
+def _build_report(request: ReportPreviewRequest) -> ReportPreviewResponse:
     calculation = request.calculation
     return ReportPreviewResponse(
-        status=status,
+        status="preview",
         title="Steel W-Section Verification",
         sections=[
             {"name": "Project Information", "data": request.project},
@@ -28,10 +28,10 @@ def _build_report(request: ReportPreviewRequest, status: str) -> ReportPreviewRe
 
 @router.post("/preview", response_model=ReportPreviewResponse)
 def preview(request: ReportPreviewRequest) -> ReportPreviewResponse:
-    return _build_report(request, "preview")
+    return _build_report(request)
 
 
 @router.post("/official", response_model=ReportPreviewResponse)
 def official_report(request: ReportPreviewRequest) -> ReportPreviewResponse:
     # TEMPORARY DEVELOPMENT BYPASS: restore entitlement/auth checks before production release.
-    return _build_report(request, "official-preview")
+    return _build_report(request)
