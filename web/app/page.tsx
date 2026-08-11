@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { SectionRecord, VerificationResponse } from "@linkoteq/steel-verification-contracts";
 import { MemberViewer } from "@/components/MemberViewer";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { SectionSelector } from "@/components/SectionSelector";
-import { VerificationForm } from "@/components/VerificationForm";
+import { VerificationForm, type DisplayActions } from "@/components/VerificationForm";
+
+const emptyActions: DisplayActions = {
+  compressionKn: 0,
+  tensionKn: 0,
+  shearMajorKn: 0,
+  shearMinorKn: 0,
+  momentMajorKnm: 0,
+  momentMinorKnm: 0
+};
 
 export default function HomePage() {
   const [section, setSection] = useState<SectionRecord | null>(null);
   const [result, setResult] = useState<VerificationResponse | null>(null);
+  const [actions, setActions] = useState<DisplayActions>(emptyActions);
+  const handleActionsChange = useCallback((next: DisplayActions) => setActions(next), []);
 
   return (
     <main>
@@ -29,16 +40,16 @@ export default function HomePage() {
       <div className="workspace">
         <div className="inputColumn">
           <SectionSelector value={section} onChange={(next) => { setSection(next); setResult(null); }} />
-          <VerificationForm section={section} onResult={setResult} />
+          <VerificationForm section={section} onResult={setResult} onActionsChange={handleActionsChange} />
         </div>
         <div className="resultColumn">
-          <MemberViewer section={section} />
+          <MemberViewer section={section} actions={actions} />
           <ResultsPanel result={result} />
         </div>
       </div>
       <footer>
         <span>Calculation engine: ECS-WSECTION-CSA-S16-2019-001 v0.2</span>
-        <span>Formal PDF download requires approved report specification and server-side entitlement.</span>
+        <span>Official PDF download requires server-side authorization and an active report subscription.</span>
       </footer>
     </main>
   );
