@@ -12,10 +12,26 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function searchSections(query: string): Promise<{items: SectionRecord[]; total: number; dataset_version: string}> {
-  const params = new URLSearchParams({ family: "W", limit: "50" });
-  if (query.trim()) params.set("query", query.trim());
-  const response = await fetch(`${API_BASE_URL}/api/v1/sections?${params.toString()}`, { cache: "no-store" });
-  return parseResponse(response);
+  const normalizedQuery = query.trim();
+  const pageSize = 200;
+  let offset = 0;
+  let total = Number.POSITIVE_INFINITY;
+  let datasetVersion = "";
+  const items: SectionRecord[] = [];
+
+  while (offset < total) {
+    const params = new URLSearchParams({ family: "W", limit: String(pageSize), offset: String(offset) });
+    if (normalizedQuery) params.set("query", normalizedQuery);
+    const response = await fetch(`${API_BASE_URL}/api/v1/sections?${params.toString()}`, { cache: "no-store" });
+    const page = await parseResponse<{items: SectionRecord[]; total: number; dataset_version: string}>(response);
+    items.push(...page.items);
+    total = page.total;
+    datasetVersion = page.dataset_version;
+    offset += page.items.length;
+    if (page.items.length === 0) break;
+  }
+
+  return { items, total: Number.isFinite(total) ? total : items.length, dataset_version: datasetVersion };
 }
 
 export async function runVerification(payload: VerificationRequest): Promise<VerificationResponse> {
