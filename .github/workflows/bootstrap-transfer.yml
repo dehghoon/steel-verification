@@ -3,6 +3,8 @@ name: bootstrap-transfer
 on:
   push:
     branches: ["feat/w-section-app"]
+  pull_request:
+    branches: ["main"]
 
 permissions:
   contents: write
