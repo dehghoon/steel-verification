@@ -1,0 +1,36 @@
+name: restore-cisc-dataset
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-cisc-dataset.yml'
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore approved CISC dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/cisc
+          cat .transfer/cisc1.b64 .transfer/cisc2.b64 .transfer/cisc3.b64 .transfer/cisc4.b64 .transfer/cisc5.b64 > /tmp/cisc.b64
+          base64 -d /tmp/cisc.b64 | gzip -d > data/cisc/cisc_sections.json
+          python - <<'PY'
+          import json
+          p='data/cisc/cisc_sections.json'
+          with open(p, encoding='utf-8') as f:
+              d=json.load(f)
+          assert len(d.get('sections', [])) == 289, len(d.get('sections', []))
+          assert any(s.get('designation_metric') == 'W100x19' for s in d['sections'])
+          print('validated', d['dataset_version'], len(d['sections']))
+          PY
+          rm -rf .transfer
+          rm -f .github/workflows/restore-cisc-dataset.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cisc/cisc_sections.json .transfer .github/workflows/restore-cisc-dataset.yml
+          git commit -m "Restore approved CISC W-section dataset"
+          git push
