@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SectionRecord } from "@linkoteq/steel-verification-contracts";
 import { searchSections } from "@/lib/api";
 
@@ -17,21 +17,23 @@ export function SectionSelector({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const handle = window.setTimeout(async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const result = await searchSections(query);
-        setItems(result.items);
-      } catch (err) {
-        setItems([]);
-        setError(err instanceof Error ? err.message : "Unable to load sections.");
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-    return () => window.clearTimeout(handle);
-  }, [query]);
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    searchSections("")
+      .then((result) => { if (!cancelled) setItems(result.items); })
+      .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : "Unable to load sections."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((section) => [section.designation, section.designation_metric, section.designation_imperial]
+      .filter(Boolean)
+      .some((name) => String(name).toLowerCase().includes(q)));
+  }, [items, query]);
 
   return (
     <section className="panel">
@@ -44,12 +46,13 @@ export function SectionSelector({
       </div>
       <label>
         Search CISC sections
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. W100X19" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. W100X19 or W4x13" />
       </label>
-      {loading && <p className="muted">Loading approved section data…</p>}
+      {loading && <p className="muted">Loading complete approved CISC W-section catalog…</p>}
       {error && <p className="error">{error}</p>}
-      <div className="sectionGrid">
-        {items.map((section) => (
+      {!loading && <p className="muted sectionCount">Showing {filtered.length} of {items.length} approved W-sections</p>}
+      <div className="sectionGrid fullCatalog">
+        {filtered.map((section) => (
           <button
             type="button"
             className={value?.id === section.id ? "sectionChoice active" : "sectionChoice"}
@@ -57,7 +60,7 @@ export function SectionSelector({
             onClick={() => onChange(section)}
           >
             <strong>{section.designation}</strong>
-            <span>{section.family} · {section.source}</span>
+            <span>{section.designation_imperial ? `${section.designation_imperial} · ` : ""}{section.source}</span>
           </button>
         ))}
       </div>
