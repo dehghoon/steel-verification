@@ -21,6 +21,7 @@ function readable(name: string) {
 
 export function ResultsPanel({ result }: { result: VerificationResponse | null }) {
   const [reportMessage, setReportMessage] = useState("");
+  const [reportPreview, setReportPreview] = useState<any>(null);
 
   if (!result) {
     return (
@@ -43,8 +44,9 @@ export function ResultsPanel({ result }: { result: VerificationResponse | null }
   async function generatePreview() {
     setReportMessage("Preparing report preview…");
     try {
-      await previewReport(result!);
-      setReportMessage("Report preview generated. Official PDF download remains subject to server-side subscription authorization.");
+      const report = await previewReport(result!);
+      setReportPreview(report);
+      setReportMessage("Report preview ready below. Temporary development access is enabled.");
     } catch (error) {
       setReportMessage(error instanceof Error ? error.message : "Unable to generate report preview.");
     }
@@ -102,6 +104,23 @@ export function ResultsPanel({ result }: { result: VerificationResponse | null }
         <button type="button" className="primaryButton" onClick={generatePreview}>Generate Report</button>
       </div>
       {reportMessage && <p className="reportMessage">{reportMessage}</p>}
+      {reportPreview && (
+        <div className="reportPreview">
+          <div className="checksHeading">
+            <span className="eyebrow">Report preview</span>
+            <h2>{reportPreview.title ?? "Steel W-Section Verification"}</h2>
+          </div>
+          {(reportPreview.sections ?? []).map((section: any) => (
+            <div className="warnings" key={section.name}>
+              <h3>{section.name}</h3>
+              <pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{JSON.stringify(section.data, null, 2)}</pre>
+            </div>
+          ))}
+          <div className="resultActions">
+            <button type="button" className="primaryButton" onClick={() => window.print()}>Print / Save as PDF</button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
