@@ -109,14 +109,17 @@ def test_engineering_validation_translated_to_422(approved_dataset) -> None:
     assert response.json()["detail"]["code"] == "ENGINEERING_INPUT_INVALID"
 
 
-def test_report_preview_is_free_but_official_download_is_denied(approved_dataset) -> None:
+def test_report_preview_and_official_preview_are_temporarily_available(approved_dataset) -> None:
     configure_dataset(approved_dataset)
     calc = client.post("/api/v1/calculations/w-section", json=benchmark_request()).json()
-    preview = client.post("/api/v1/reports/preview", json={"calculation": calc, "project": {"name": "Test"}})
+    request = {"calculation": calc, "project": {"name": "Test"}}
+
+    preview = client.post("/api/v1/reports/preview", json=request)
     assert preview.status_code == 200
     assert preview.json()["status"] == "preview"
-    assert preview.json()["official_download_available"] is False
+    assert preview.json()["official_download_available"] is True
 
-    official = client.post("/api/v1/reports/official")
-    assert official.status_code == 403
-    assert official.json()["detail"]["code"] == "REPORT_ENTITLEMENT_REQUIRED"
+    official = client.post("/api/v1/reports/official", json=request)
+    assert official.status_code == 200
+    assert official.json()["status"] == "official-preview"
+    assert official.json()["official_download_available"] is True
