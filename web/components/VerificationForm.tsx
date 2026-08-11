@@ -1,19 +1,27 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { SectionRecord, VerificationRequest, VerificationResponse } from "@linkoteq/steel-verification-contracts";
 import { runVerification } from "@/lib/api";
 
 type NumericFields = Record<string, string>;
+export type DisplayActions = {
+  compressionKn: number;
+  tensionKn: number;
+  shearMajorKn: number;
+  shearMinorKn: number;
+  momentMajorKnm: number;
+  momentMinorKnm: number;
+};
 
 const initial: NumericFields = {
   yield_strength: "350",
   ultimate_strength: "450",
   elastic_modulus: "200000",
   shear_modulus: "77000",
-  length_major: "3000",
-  length_minor: "3000",
-  length_torsional: "3000",
+  length_major: "3.0",
+  length_minor: "3.0",
+  length_torsional: "3.0",
   k_major: "1.0",
   k_minor: "1.0",
   k_torsional: "1.0",
@@ -29,10 +37,12 @@ const initial: NumericFields = {
 
 export function VerificationForm({
   section,
-  onResult
+  onResult,
+  onActionsChange
 }: {
   section: SectionRecord | null;
   onResult: (result: VerificationResponse | null) => void;
+  onActionsChange?: (actions: DisplayActions) => void;
 }) {
   const [fields, setFields] = useState(initial);
   const [error, setError] = useState("");
@@ -43,6 +53,17 @@ export function VerificationForm({
 
   const update = (key: string, value: string) => setFields((current) => ({ ...current, [key]: value }));
   const n = (key: string) => Number(fields[key]);
+
+  useEffect(() => {
+    onActionsChange?.({
+      compressionKn: n("compression_force"),
+      tensionKn: n("tension_force"),
+      shearMajorKn: n("shear_major"),
+      shearMinorKn: n("shear_minor"),
+      momentMajorKnm: n("moment_major"),
+      momentMinorKnm: n("moment_minor")
+    });
+  }, [fields, onActionsChange]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -61,20 +82,20 @@ export function VerificationForm({
         shear_modulus: n("shear_modulus")
       },
       geometry: {
-        length_major: n("length_major"),
-        length_minor: n("length_minor"),
-        length_torsional: n("length_torsional"),
+        length_major: n("length_major") * 1000,
+        length_minor: n("length_minor") * 1000,
+        length_torsional: n("length_torsional") * 1000,
         effective_length_factor_major: n("k_major"),
         effective_length_factor_minor: n("k_minor"),
         effective_length_factor_torsional: n("k_torsional")
       },
       actions: {
-        compression_force: n("compression_force"),
-        tension_force: n("tension_force"),
-        shear_major: n("shear_major"),
-        shear_minor: n("shear_minor"),
-        moment_major: n("moment_major"),
-        moment_minor: n("moment_minor"),
+        compression_force: n("compression_force") * 1000,
+        tension_force: n("tension_force") * 1000,
+        shear_major: n("shear_major") * 1000,
+        shear_minor: n("shear_minor") * 1000,
+        moment_major: n("moment_major") * 1000000,
+        moment_minor: n("moment_minor") * 1000000,
         live_load_deflection: n("live_load_deflection")
       },
       deflection_limit_ratio: n("deflection_limit_ratio"),
@@ -118,21 +139,21 @@ export function VerificationForm({
       </div>
       <h3>Member geometry</h3>
       <div className="fieldGrid">
-        {input("length_major", "Lx", "mm")}
-        {input("length_minor", "Ly", "mm")}
-        {input("length_torsional", "Lz", "mm")}
+        {input("length_major", "Lx", "m")}
+        {input("length_minor", "Ly", "m")}
+        {input("length_torsional", "Lz", "m")}
         {input("k_major", "kx", "—")}
         {input("k_minor", "ky", "—")}
         {input("k_torsional", "kz", "—")}
       </div>
-      <h3>Factored actions</h3>
+      <h3>Factored Forces</h3>
       <div className="fieldGrid">
-        {input("compression_force", "Compression", "N")}
-        {input("tension_force", "Tension", "N")}
-        {input("shear_major", "Major shear", "N")}
-        {input("shear_minor", "Minor shear", "N")}
-        {input("moment_major", "Major moment", "N·mm")}
-        {input("moment_minor", "Minor moment", "N·mm")}
+        {input("compression_force", "Compression", "kN")}
+        {input("tension_force", "Tension", "kN")}
+        {input("shear_major", "Major shear", "kN")}
+        {input("shear_minor", "Minor shear", "kN")}
+        {input("moment_major", "Major moment", "kN·m")}
+        {input("moment_minor", "Minor moment", "kN·m")}
         {input("live_load_deflection", "Live deflection", "mm")}
         {input("deflection_limit_ratio", "Deflection limit", "L /")}
       </div>
