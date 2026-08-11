@@ -6,8 +6,7 @@ import { runVerification } from "@/lib/api";
 
 type NumericFields = Record<string, string>;
 export type DisplayActions = {
-  compressionKn: number;
-  tensionKn: number;
+  axialKn: number;
   shearMajorKn: number;
   shearMinorKn: number;
   momentMajorKnm: number;
@@ -25,15 +24,15 @@ const initial: NumericFields = {
   k_major: "1.0",
   k_minor: "1.0",
   k_torsional: "1.0",
-  compression_force: "0",
-  tension_force: "0",
+  axial_force: "0",
   shear_major: "0",
   shear_minor: "0",
   moment_major: "0",
-  moment_minor: "0",
-  live_load_deflection: "0",
-  deflection_limit_ratio: "300"
+  moment_minor: "0"
 };
+
+const DEFAULT_LIVE_LOAD_DEFLECTION_MM = 0;
+const DEFAULT_DEFLECTION_LIMIT_RATIO = 300;
 
 export function VerificationForm({
   section,
@@ -56,8 +55,7 @@ export function VerificationForm({
 
   useEffect(() => {
     onActionsChange?.({
-      compressionKn: n("compression_force"),
-      tensionKn: n("tension_force"),
+      axialKn: n("axial_force"),
       shearMajorKn: n("shear_major"),
       shearMinorKn: n("shear_minor"),
       momentMajorKnm: n("moment_major"),
@@ -71,6 +69,8 @@ export function VerificationForm({
       setError("Select an approved CISC section first.");
       return;
     }
+
+    const axialForceKn = n("axial_force");
     const payload: VerificationRequest = {
       section_id: section.id,
       designation: section.designation,
@@ -90,15 +90,15 @@ export function VerificationForm({
         effective_length_factor_torsional: n("k_torsional")
       },
       actions: {
-        compression_force: n("compression_force") * 1000,
-        tension_force: n("tension_force") * 1000,
+        compression_force: Math.max(-axialForceKn, 0) * 1000,
+        tension_force: Math.max(axialForceKn, 0) * 1000,
         shear_major: n("shear_major") * 1000,
         shear_minor: n("shear_minor") * 1000,
         moment_major: n("moment_major") * 1000000,
         moment_minor: n("moment_minor") * 1000000,
-        live_load_deflection: n("live_load_deflection")
+        live_load_deflection: DEFAULT_LIVE_LOAD_DEFLECTION_MM
       },
-      deflection_limit_ratio: n("deflection_limit_ratio"),
+      deflection_limit_ratio: DEFAULT_DEFLECTION_LIMIT_RATIO,
       continuous_lateral_restraint_confirmed: restraint,
       coincident_force_set: coincident,
       net_area_equals_gross_confirmed: netArea
@@ -148,15 +148,13 @@ export function VerificationForm({
       </div>
       <h3>Factored Forces</h3>
       <div className="fieldGrid">
-        {input("compression_force", "Compression", "kN")}
-        {input("tension_force", "Tension", "kN")}
-        {input("shear_major", "Major shear", "kN")}
-        {input("shear_minor", "Minor shear", "kN")}
-        {input("moment_major", "Major moment", "kN·m")}
-        {input("moment_minor", "Minor moment", "kN·m")}
-        {input("live_load_deflection", "Live deflection", "mm")}
-        {input("deflection_limit_ratio", "Deflection limit", "L /")}
+        {input("axial_force", "Axial Force", "kN")}
+        {input("shear_major", "Major Shear (V1)", "kN")}
+        {input("shear_minor", "Minor Shear (V2)", "kN")}
+        {input("moment_major", "Major Moment (M2)", "kN·m")}
+        {input("moment_minor", "Minor Moment (M1)", "kN·m")}
       </div>
+      <p className="inputNote">Axial Force sign convention: positive values represent tension and are shown with an upward arrow above the column; negative values represent compression and are shown with a downward arrow above the column.</p>
       <div className="confirmations">
         <label><input type="checkbox" checked={restraint} onChange={(e) => setRestraint(e.target.checked)} /> Continuous lateral restraint confirmed</label>
         <label><input type="checkbox" checked={coincident} onChange={(e) => setCoincident(e.target.checked)} /> Coincident force set confirmed</label>
