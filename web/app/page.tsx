@@ -49,7 +49,7 @@ export default function HomePage() {
       </div>
       <footer>
         <span>Calculation engine: ECS-WSECTION-CSA-S16-2019-001 v0.2</span>
-        <span>Official PDF download requires server-side authorization and an active report subscription.</span>
+        <span>Temporary development mode: report preview and browser PDF printing are enabled without subscription authorization.</span>
       </footer>
     </main>
   );
