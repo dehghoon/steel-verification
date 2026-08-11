@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      CISC_DATASET_PATH: /data/cisc_sections.json
+      API_ALLOWED_ORIGINS: http://localhost:3000
+    volumes:
+      - ./data/cisc:/data:ro
+    ports:
+      - "8000:8000"
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
