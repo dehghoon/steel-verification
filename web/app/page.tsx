@@ -8,8 +8,7 @@ import { SectionSelector } from "@/components/SectionSelector";
 import { VerificationForm, type DisplayActions } from "@/components/VerificationForm";
 
 const emptyActions: DisplayActions = {
-  compressionKn: 0,
-  tensionKn: 0,
+  axialKn: 0,
   shearMajorKn: 0,
   shearMinorKn: 0,
   momentMajorKnm: 0,
