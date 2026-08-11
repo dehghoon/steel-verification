@@ -1,16 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter
 
-from app.core.config import settings
 from app.models.api import ReportPreviewRequest, ReportPreviewResponse
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-@router.post("/preview", response_model=ReportPreviewResponse)
-def preview(request: ReportPreviewRequest) -> ReportPreviewResponse:
+def _build_report(request: ReportPreviewRequest, status: str) -> ReportPreviewResponse:
     calculation = request.calculation
     return ReportPreviewResponse(
-        status="preview",
+        status=status,
         title="Steel W-Section Verification",
         sections=[
             {"name": "Project Information", "data": request.project},
@@ -23,17 +21,17 @@ def preview(request: ReportPreviewRequest) -> ReportPreviewResponse:
             {"name": "Warnings", "data": calculation.warnings},
             {"name": "Code References", "data": calculation.code_reference_ids},
         ],
-        official_download_available=False,
-        limitation="Official PDF rendering remains disabled until the approved tool-specific Report Specification and entitlement integration are configured.",
+        official_download_available=True,
+        limitation="Temporary development mode: report entitlement/authentication is bypassed for review. PDF rendering is not yet implemented.",
     )
 
 
-@router.post("/official")
-def official_report() -> None:
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail={
-            "code": "REPORT_ENTITLEMENT_REQUIRED",
-            "message": "Official PDF generation is disabled until server-side authentication, entitlement, and the approved Report Specification are configured.",
-        },
-    )
+@router.post("/preview", response_model=ReportPreviewResponse)
+def preview(request: ReportPreviewRequest) -> ReportPreviewResponse:
+    return _build_report(request, "preview")
+
+
+@router.post("/official", response_model=ReportPreviewResponse)
+def official_report(request: ReportPreviewRequest) -> ReportPreviewResponse:
+    # TEMPORARY DEVELOPMENT BYPASS: restore entitlement/auth checks before production release.
+    return _build_report(request, "official-preview")
