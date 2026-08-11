@@ -121,5 +121,5 @@ def test_report_preview_and_official_preview_are_temporarily_available(approved_
 
     official = client.post("/api/v1/reports/official", json=request)
     assert official.status_code == 200
-    assert official.json()["status"] == "official-preview"
+    assert official.json()["status"] == "preview"
     assert official.json()["official_download_available"] is True
