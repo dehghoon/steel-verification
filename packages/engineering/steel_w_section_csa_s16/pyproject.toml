@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "steel-w-section-csa-s16"
+version = "0.1.0"
+description = "Standalone CSA S16:2019 W-section calculation engine based on ECS-WSECTION-CSA-S16-2019-001."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.setuptools.packages.find]
+include = ["steel_w_section_csa_s16*"]
