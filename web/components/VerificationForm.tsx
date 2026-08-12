@@ -7,14 +7,34 @@ import { runVerification } from "@/lib/api";
 type NumericFields = Record<string, string>;
 export type DisplayActions = { axialKn:number; shearMajorKn:number; shearMinorKn:number; momentMajorKnm:number; momentMinorKnm:number; };
 const initial: NumericFields = { yield_strength:"350", ultimate_strength:"450", elastic_modulus:"200000", shear_modulus:"77000", length_major:"3.0", length_minor:"3.0", length_torsional:"3.0", k_major:"1.0", k_minor:"1.0", k_torsional:"1.0", axial_force:"0", shear_major:"0", shear_minor:"0", moment_major:"0", moment_minor:"0" };
+const STORAGE_KEY="steel-verification-inputs-v1";
+const FLAGS_KEY="steel-verification-flags-v1";
 const DEFAULT_LIVE_LOAD_DEFLECTION_MM=0, DEFAULT_DEFLECTION_LIMIT_RATIO=300;
 
+function loadFields():NumericFields{
+  if(typeof window==="undefined") return initial;
+  try { return { ...initial, ...JSON.parse(window.sessionStorage.getItem(STORAGE_KEY) ?? "{}") }; } catch { return initial; }
+}
+function loadFlags(){
+  if(typeof window==="undefined") return {restraint:false,coincident:false,netArea:false};
+  try { return {restraint:false,coincident:false,netArea:false,...JSON.parse(window.sessionStorage.getItem(FLAGS_KEY) ?? "{}")}; } catch { return {restraint:false,coincident:false,netArea:false}; }
+}
+
 export function VerificationForm({ section, onResult, onActionsChange }: { section:SectionRecord|null; onResult:(result:VerificationResponse|null)=>void; onActionsChange?:(actions:DisplayActions)=>void; }) {
-  const [fields,setFields]=useState(initial); const [error,setError]=useState(""); const [restraint,setRestraint]=useState(false); const [coincident,setCoincident]=useState(false); const [netArea,setNetArea]=useState(false); const [status,setStatus]=useState("Ready");
+  const [fields,setFields]=useState<NumericFields>(loadFields);
+  const initialFlags=loadFlags();
+  const [error,setError]=useState("");
+  const [restraint,setRestraint]=useState(initialFlags.restraint);
+  const [coincident,setCoincident]=useState(initialFlags.coincident);
+  const [netArea,setNetArea]=useState(initialFlags.netArea);
+  const [status,setStatus]=useState("Ready");
   const resultCallback=useRef(onResult); const actionsCallback=useRef(onActionsChange);
   useEffect(()=>{resultCallback.current=onResult;},[onResult]); useEffect(()=>{actionsCallback.current=onActionsChange;},[onActionsChange]);
   const n=(key:string)=>Number(fields[key]); const update=(key:string,value:string)=>setFields(c=>({...c,[key]:value}));
   const actions=useMemo(()=>({axialKn:n("axial_force"),shearMajorKn:n("shear_major"),shearMinorKn:n("shear_minor"),momentMajorKnm:n("moment_major"),momentMinorKnm:n("moment_minor")}),[fields]);
+
+  useEffect(()=>{ if(typeof window!=="undefined") window.sessionStorage.setItem(STORAGE_KEY,JSON.stringify(fields)); },[fields]);
+  useEffect(()=>{ if(typeof window!=="undefined") window.sessionStorage.setItem(FLAGS_KEY,JSON.stringify({restraint,coincident,netArea})); },[restraint,coincident,netArea]);
   useEffect(()=>actionsCallback.current?.(actions),[actions]);
 
   useEffect(()=>{
