@@ -19,19 +19,27 @@ export default function HomePage() {
 
   return <main>
     <header className="topbar"><div className="brandMark">L</div><div><strong>LinkoTech Engineering</strong><span>Steel Verification</span></div><div className="codeBadge">CSA S16:2019</div></header>
-    <nav className="toolTabs toolTabsAlwaysVisible" aria-label="Tool views">
+    <nav className="toolTabs toolTabsAlwaysVisible" aria-label="Tool Views">
       {(["model", "input", "results", "report"] as Tab[]).map(t => <button type="button" key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t === "results" ? "Results" : t[0].toUpperCase() + t.slice(1)}</button>)}
     </nav>
     <div className="tabWorkspace">
-      {tab === "model" && <div className="modelTab">
-        <SectionSelector value={section} compact onChange={next => { setSection(next); setResult(null); }} />
-        <MemberViewer section={section} actions={actions} />
-        <div className="modelSelectionSummary"><span>Selected section</span><strong>{section?.designation ?? "W100X19"}</strong><small>Change section here. Forces and member inputs are in the Input tab.</small></div>
-      </div>}
-      {tab === "input" && <div className="inputTab"><VerificationForm section={section} onResult={setResult} onActionsChange={handleActionsChange} /></div>}
-      {tab === "results" && <div className="resultsOnly"><ResultsPanel result={result} mode="results" /></div>}
-      {tab === "report" && <div className="reportOnly"><ResultsPanel result={result} mode="report" /></div>}
+      <section className={tab === "model" ? "tabPane activePane" : "tabPane hiddenPane"} aria-hidden={tab !== "model"}>
+        <div className="modelTab">
+          <SectionSelector value={section} compact onChange={next => setSection(next)} />
+          <MemberViewer section={section} actions={actions} />
+          <div className="modelSelectionSummary"><span>Selected Section</span><strong>{section?.designation ?? "W100X19"}</strong><small>Change Section Here. Forces And Member Inputs Are In The Input Tab.</small></div>
+        </div>
+      </section>
+      <section className={tab === "input" ? "tabPane activePane" : "tabPane hiddenPane"} aria-hidden={tab !== "input"}>
+        <div className="inputTab"><VerificationForm section={section} onResult={setResult} onActionsChange={handleActionsChange} /></div>
+      </section>
+      <section className={tab === "results" ? "tabPane activePane" : "tabPane hiddenPane"} aria-hidden={tab !== "results"}>
+        <div className="resultsOnly"><ResultsPanel result={result} mode="results" /></div>
+      </section>
+      <section className={tab === "report" ? "tabPane activePane" : "tabPane hiddenPane"} aria-hidden={tab !== "report"}>
+        <div className="reportOnly"><ResultsPanel result={result} mode="report" /></div>
+      </section>
     </div>
-    <footer><span>Calculation engine: ECS-WSECTION-CSA-S16-2019-001 v0.2</span><span>Inputs recalculate automatically.</span></footer>
+    <footer><span>Calculation Engine: ECS-WSECTION-CSA-S16-2019-001 v0.2</span><span>Inputs Recalculate Automatically.</span></footer>
   </main>;
 }
