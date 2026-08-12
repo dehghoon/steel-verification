@@ -7,79 +7,24 @@ import { ResultsPanel } from "@/components/ResultsPanel";
 import { SectionSelector } from "@/components/SectionSelector";
 import { VerificationForm, type DisplayActions } from "@/components/VerificationForm";
 
-type WorkspaceTab = "input" | "results" | "report";
+type Tab="model"|"input"|"results"|"report";
+const emptyActions:DisplayActions={axialKn:0,shearMajorKn:0,shearMinorKn:0,momentMajorKnm:0,momentMinorKnm:0};
 
-const emptyActions: DisplayActions = {
-  axialKn: 0,
-  shearMajorKn: 0,
-  shearMinorKn: 0,
-  momentMajorKnm: 0,
-  momentMinorKnm: 0
-};
-
-export default function HomePage() {
-  const [section, setSection] = useState<SectionRecord | null>(null);
-  const [result, setResult] = useState<VerificationResponse | null>(null);
-  const [actions, setActions] = useState<DisplayActions>(emptyActions);
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>("input");
-  const handleActionsChange = useCallback((next: DisplayActions) => setActions(next), []);
-
-  return (
-    <main>
-      <header className="topbar">
-        <div className="brandMark">L</div>
-        <div>
-          <strong>LinkoTech Engineering</strong>
-          <span>Steel Verification</span>
-        </div>
-        <div className="codeBadge">CSA S16:2019</div>
-      </header>
-
-      <section className="hero">
-        <span className="eyebrow">Structural steel design</span>
-        <h1>W-section member verification</h1>
-        <p>Validated engineering calculations served through a traceable API. Section properties come only from the configured approved CISC dataset.</p>
-      </section>
-
-      <nav className="workspaceTabs" aria-label="Tool sections">
-        <button className={activeTab === "input" ? "workspaceTab active" : "workspaceTab"} onClick={() => setActiveTab("input")} type="button">Input</button>
-        <button className={activeTab === "results" ? "workspaceTab active" : "workspaceTab"} onClick={() => setActiveTab("results")} type="button">Results</button>
-        <button className={activeTab === "report" ? "workspaceTab active" : "workspaceTab"} onClick={() => setActiveTab("report")} type="button">Report</button>
-      </nav>
-
-      <section className="viewerStage">
-        <MemberViewer section={section} actions={actions} />
-      </section>
-
-      <div className="workspace tabbedWorkspace">
-        {activeTab === "input" && (
-          <div className="inputColumn tabPanelWide">
-            <SectionSelector value={section} onChange={(next) => { setSection(next); setResult(null); }} />
-            <VerificationForm
-              section={section}
-              onResult={(next) => { setResult(next); setActiveTab("results"); }}
-              onActionsChange={handleActionsChange}
-            />
-          </div>
-        )}
-
-        {activeTab === "results" && (
-          <div className="resultColumn tabPanelWide">
-            <ResultsPanel result={result} />
-          </div>
-        )}
-
-        {activeTab === "report" && (
-          <div className="resultColumn tabPanelWide reportTabPanel">
-            <ResultsPanel result={result} />
-          </div>
-        )}
-      </div>
-
-      <footer>
-        <span>Calculation engine: ECS-WSECTION-CSA-S16-2019-001 v0.2</span>
-        <span>Temporary development mode: report preview and browser PDF printing are enabled without subscription authorization.</span>
-      </footer>
-    </main>
-  );
+export default function HomePage(){
+  const [section,setSection]=useState<SectionRecord|null>(null); const [result,setResult]=useState<VerificationResponse|null>(null); const [actions,setActions]=useState<DisplayActions>(emptyActions); const [tab,setTab]=useState<Tab>("model");
+  const handleActionsChange=useCallback((next:DisplayActions)=>setActions(next),[]);
+  return <main>
+    <header className="topbar"><div className="brandMark">L</div><div><strong>LinkoTech Engineering</strong><span>Steel Verification</span></div><div className="codeBadge">CSA S16:2019</div></header>
+    <section className="hero compactHero"><span className="eyebrow">Structural steel design</span><h1>W-section member verification</h1></section>
+    <nav className="toolTabs" aria-label="Tool views">
+      {(["model","input","results","report"] as Tab[]).map(t=><button type="button" key={t} className={tab===t?"active":""} onClick={()=>setTab(t)}>{t==="results"?"Results":t[0].toUpperCase()+t.slice(1)}</button>)}
+    </nav>
+    <div className="tabWorkspace">
+      {tab==="model"&&<div className="modelTab"><MemberViewer section={section} actions={actions}/><div className="modelSelectionSummary"><span>Selected section</span><strong>{section?.designation??"W100X19"}</strong><small>Change section and forces in the Input tab.</small></div></div>}
+      {tab==="input"&&<div className="inputTab"><SectionSelector value={section} onChange={next=>{setSection(next);setResult(null);}}/><VerificationForm section={section} onResult={setResult} onActionsChange={handleActionsChange}/></div>}
+      {tab==="results"&&<div className="resultsOnly"><ResultsPanel result={result}/></div>}
+      {tab==="report"&&<div className="reportOnly"><div className="reportTabHeading"><span className="eyebrow">Engineering calculation report</span><h2>Report</h2><p>Generate the current calculation report from the automatically updated inputs and results.</p></div><ResultsPanel result={result}/></div>}
+    </div>
+    <footer><span>Calculation engine: ECS-WSECTION-CSA-S16-2019-001 v0.2</span><span>Inputs recalculate automatically.</span></footer>
+  </main>;
 }
