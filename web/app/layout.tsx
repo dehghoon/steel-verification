@@ -1,6 +1,6 @@
 import "./globals.css";
 import "./report.css";
-import "./workspace-tabs.css";
+import "./tool-tabs.css";
 
 export const metadata = {
   title: "Steel Verification",
@@ -8,9 +8,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+  return <html lang="en"><body>{children}</body></html>;
 }
