@@ -1,17 +1,4 @@
-.toolTabs {
-  position: sticky;
-  top: 72px;
-  z-index: 30;
-  display: grid;
-  grid-template-columns: repeat(4,minmax(0,1fr));
-  gap: 6px;
-  margin: 0 5vw 16px;
-  padding: 6px;
-  border: 1px solid #223844;
-  border-radius: 14px;
-  background: rgba(7,16,22,.96);
-  backdrop-filter: blur(14px);
-}
+.toolTabs { position:sticky; top:72px; z-index:30; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin:0 5vw 16px; padding:6px; border:1px solid #223844; border-radius:14px; background:rgba(7,16,22,.96); backdrop-filter:blur(14px); }
 .toolTabs button { min-height:42px; border:0; border-radius:10px; background:transparent; color:#91a7b4; font-weight:800; cursor:pointer; }
 .toolTabs button.active { color:#fff; background:linear-gradient(180deg,#153344,#102633); box-shadow:inset 0 0 0 1px #315364; }
 .tabWorkspace { padding:0 5vw 32px; }
@@ -24,26 +11,30 @@
 .reportTabHeading { display:grid; gap:8px; margin-bottom:16px; }
 .reportTabHeading h2 { margin:0; }
 .generatePdfButton { width:min(260px,100%); }
-.sectionModalBackdrop { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:18px; background:rgba(2,8,12,.72); }
-.sectionModal { width:min(560px,100%); max-height:min(78vh,680px); display:grid; grid-template-rows:auto auto minmax(0,1fr); gap:12px; padding:16px; border-radius:18px; background:#f7fafb; color:#17232b; box-shadow:0 24px 90px rgba(0,0,0,.45); }
+.sectionModalBackdrop { position:fixed; inset:0; z-index:2147483000; isolation:isolate; display:grid; place-items:center; padding:18px; background:rgba(2,8,12,.82); }
+.sectionModal { position:relative; z-index:1; width:min(560px,100%); max-height:min(78vh,680px); display:grid; grid-template-rows:auto auto minmax(0,1fr); gap:12px; padding:16px; border-radius:18px; background:#f7fafb; color:#17232b; box-shadow:0 24px 90px rgba(0,0,0,.45); }
 .sectionModalHeader { display:flex; justify-content:space-between; align-items:flex-start; }
 .sectionModalHeader h3 { margin:3px 0 0; color:#17232b; }
 .sectionModalHeader button { border:0; background:transparent; font-size:30px; line-height:1; cursor:pointer; }
 .sectionModal input { background:#fff !important; color:#17232b !important; border-color:#cad8df !important; }
-.sectionModalList { min-height:0; overflow-y:auto; overscroll-behavior:contain; display:grid; gap:8px; padding:2px 5px 2px 2px; }
+.sectionModalList { min-height:0; overflow-y:auto; overscroll-behavior:contain; display:grid; gap:8px; padding:2px 8px 2px 2px; scrollbar-width:auto; }
+.sectionModalList::-webkit-scrollbar { width:12px; }
+.sectionModalList::-webkit-scrollbar-thumb { background:#9aabb4; border-radius:10px; border:3px solid #f7fafb; }
 .sectionModalList .sectionChoice { background:#fff; color:#152733; border-color:#d7e1e6; }
 .sectionModalList .sectionChoice span { color:#6a7d87; }
 .sectionPickerButton { width:100%; display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 14px; border:1px solid #d7e1e6; border-radius:12px; background:#fff; color:#152733; text-align:left; cursor:pointer; }
 .sectionPickerButton span { display:grid; gap:2px; }
 .sectionPickerButton small { color:#6a7d87; }
 .sectionPickerButton b { font-size:24px; }
+html { scrollbar-gutter:stable; }
+body { overscroll-behavior-y:auto; touch-action:pan-y; }
 @media(max-width:560px){
   .toolTabs { top:72px; margin:0 10px 12px; padding:5px; gap:3px; }
   .toolTabs button { min-height:40px; font-size:12px; padding:0 4px; }
   .tabWorkspace { padding:0 10px 24px; }
   .compactSectionSelector { width:calc(100% - 28px); margin-left:0; margin-right:auto; }
-  .modelTab .viewer,.modelTab .viewerFallback { height:390px; }
+  .modelTab .viewer,.modelTab .viewerFallback { height:390px; touch-action:pan-y; }
   .sectionModalBackdrop { align-items:end; padding:0; }
   .sectionModal { width:100%; max-height:82vh; border-radius:20px 20px 0 0; padding:16px 16px max(18px,env(safe-area-inset-bottom)); }
-  .sectionModalList { max-height:58vh; }
+  .sectionModalList { max-height:58vh; touch-action:pan-y; }
 }
