@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./report.css";
+import "./workspace-tabs.css";
 
 export const metadata = {
   title: "Steel Verification",
