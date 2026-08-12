@@ -2,6 +2,9 @@
 .toolTabs button { min-height:42px; border:0; border-radius:10px; background:transparent; color:#91a7b4; font-weight:800; cursor:pointer; }
 .toolTabs button.active { color:#fff; background:linear-gradient(180deg,#153344,#102633); box-shadow:inset 0 0 0 1px #315364; }
 .tabWorkspace { padding:0 5vw 32px; }
+.tabPane { width:100%; }
+.hiddenPane { display:none !important; }
+.activePane { display:block; }
 .modelTab,.inputTab,.resultsOnly,.reportOnly { width:100%; max-width:1180px; margin:0 auto; }
 .modelTab { display:grid; gap:12px; }
 .compactSectionSelector { width:min(420px,100%); margin:0; }
