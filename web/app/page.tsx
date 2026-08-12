@@ -5,6 +5,7 @@ import type { SectionRecord, VerificationResponse } from "@linkoteq/steel-verifi
 import { MemberViewer } from "@/components/MemberViewer";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { SectionSelector } from "@/components/SectionSelector";
+import { SiteHeader } from "@/components/SiteHeader";
 import { VerificationForm, type DisplayActions } from "@/components/VerificationForm";
 
 type Tab = "model" | "input" | "results" | "report";
@@ -33,7 +34,8 @@ export default function HomePage() {
   }
 
   return <main>
-    <header className="topbar"><div className="brandMark">L</div><div><strong>LinkoTech Engineering</strong><span>Steel Verification</span></div><div className="codeBadge">CSA S16:2019</div></header>
+    <SiteHeader />
+    <section className="toolIdentity"><span className="eyebrow">Structural Steel Design</span><h1>W-Section Verification</h1><span className="codeBadge">CSA S16:2019</span></section>
     <nav className="toolTabs toolTabsAlwaysVisible" aria-label="Tool Views">
       {(["model", "input", "results", "report"] as Tab[]).map(t => <button type="button" key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t === "results" ? "Results" : t[0].toUpperCase() + t.slice(1)}</button>)}
     </nav>
