@@ -36,7 +36,7 @@ export function SectionSelector({
   }, [items, query]);
 
   return (
-    <section className="panel">
+    <section className="panel sectionSelectorPanel">
       <div className="panelTitle">
         <div>
           <span className="eyebrow">Approved data</span>
@@ -51,18 +51,21 @@ export function SectionSelector({
       {loading && <p className="muted">Loading complete approved CISC W-section catalog…</p>}
       {error && <p className="error">{error}</p>}
       {!loading && <p className="muted sectionCount">Showing {filtered.length} of {items.length} approved W-sections</p>}
-      <div className="sectionGrid fullCatalog">
-        {filtered.map((section) => (
-          <button
-            type="button"
-            className={value?.id === section.id ? "sectionChoice active" : "sectionChoice"}
-            key={section.id}
-            onClick={() => onChange(section)}
-          >
-            <strong>{section.designation}</strong>
-            <span>{section.designation_imperial ? `${section.designation_imperial} · ` : ""}{section.source}</span>
-          </button>
-        ))}
+      <div className="sectionCatalogShell">
+        <div className="catalogScrollCue" aria-hidden="true">⌄</div>
+        <div className="sectionGrid fullCatalog">
+          {filtered.map((section) => (
+            <button
+              type="button"
+              className={value?.id === section.id ? "sectionChoice active" : "sectionChoice"}
+              key={section.id}
+              onClick={() => onChange(section)}
+            >
+              <strong>{section.designation}</strong>
+              <span>{section.designation_imperial ? `${section.designation_imperial} · ` : ""}{section.source}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );
