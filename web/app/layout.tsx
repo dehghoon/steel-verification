@@ -1,9 +1,10 @@
 import "./globals.css";
 import "./report.css";
 import "./tool-tabs.css";
+import "./brand-shell.css";
 
 export const metadata = {
-  title: "Steel Verification",
+  title: "W-Section | LinkoTech",
   description: "CSA S16:2019 W-section verification"
 };
 
