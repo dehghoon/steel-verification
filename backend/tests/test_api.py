@@ -60,6 +60,7 @@ def test_openapi_generation() -> None:
     response = client.get("/openapi.json")
     assert response.status_code == 200
     assert "/api/v1/calculations/w-section" in response.json()["paths"]
+    assert "/api/v1/calculations/w-section/core" in response.json()["paths"]
 
 
 def test_sections_are_loaded_from_configured_dataset(approved_dataset) -> None:
@@ -91,6 +92,48 @@ def test_adapter_preserves_agent2_benchmark(approved_dataset) -> None:
     assert body["engine"]["id"] == "ECS-WSECTION-CSA-S16-2019-001"
 
 
+def test_core_v03_writeback_is_canonical_and_traceable(approved_dataset) -> None:
+    configure_dataset(approved_dataset)
+    payload = {
+        "model_schema_version": "0.3",
+        "project_id": "P-001",
+        "run_id": "DES-W-001",
+        "calculator": "w-section",
+        "calculator_version": "1.0",
+        "target_ids": ["C-12"],
+        "member_id": "C-12",
+        "analysis_run_id": "AN-004",
+        "load_combination_id": "ULS-1",
+        "verification": benchmark_request(),
+    }
+    response = client.post("/api/v1/calculations/w-section/core", json=payload)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["modelSchemaVersion"] == "0.3"
+    assert body["projectId"] == "P-001"
+    assert body["runId"] == "DES-W-001"
+    assert body["targetIds"] == ["C-12"]
+    assert body["designRun"]["analysisRunId"] == "AN-004"
+    assert body["memberDesignResults"][0]["memberId"] == "C-12"
+    assert body["memberDesignResults"][0]["assignedSectionId"] == "test-w100x19"
+    assert body["memberDesignResults"][0]["checks"]
+    assert body["trace"][0]["schema_version"] == "0.3"
+
+
+def test_core_v02_request_is_accepted_but_writeback_is_v03(approved_dataset) -> None:
+    configure_dataset(approved_dataset)
+    payload = {
+        "model_schema_version": "0.2",
+        "project_id": "P-LEGACY",
+        "run_id": "DES-LEGACY",
+        "member_id": "C-1",
+        "verification": benchmark_request(),
+    }
+    response = client.post("/api/v1/calculations/w-section/core", json=payload)
+    assert response.status_code == 200, response.text
+    assert response.json()["modelSchemaVersion"] == "0.3"
+
+
 def test_dataset_version_mismatch_rejected(approved_dataset) -> None:
     configure_dataset(approved_dataset)
     payload = benchmark_request()
@@ -112,12 +155,24 @@ def test_engineering_validation_translated_to_422(approved_dataset) -> None:
 def test_report_preview_and_official_preview_are_temporarily_available(approved_dataset) -> None:
     configure_dataset(approved_dataset)
     calc = client.post("/api/v1/calculations/w-section", json=benchmark_request()).json()
-    request = {"calculation": calc, "project": {"name": "Test"}}
+    request = {
+        "calculation": calc,
+        "project": {"name": "Test"},
+        "model_schema_version": "0.3",
+        "project_id": "P-001",
+        "report_request_id": "RPT-001",
+        "design_run_id": "DES-W-001",
+        "member_id": "C-12",
+    }
 
     preview = client.post("/api/v1/reports/preview", json=request)
     assert preview.status_code == 200
     assert preview.json()["status"] == "preview"
     assert preview.json()["official_download_available"] is True
+    canonical = preview.json()["canonical_report"]
+    assert canonical["modelSchemaVersion"] == "0.3"
+    assert canonical["requestId"] == "RPT-001"
+    assert "DES-W-001" in canonical["sourceIds"]
 
     official = client.post("/api/v1/reports/official", json=request)
     assert official.status_code == 200
