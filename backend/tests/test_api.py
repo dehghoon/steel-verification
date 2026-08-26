@@ -12,7 +12,6 @@ client = TestClient(app)
 def configure_dataset(path) -> None:
     object.__setattr__(settings, "cisc_dataset_path", str(path))
 
-
 def benchmark_request() -> dict:
     return {
         "section_id": "test-w100x19",
@@ -48,20 +47,17 @@ def benchmark_request() -> dict:
         "net_area_equals_gross_confirmed": True
     }
 
-
 def test_health_and_version() -> None:
     assert client.get("/health").json()["status"] == "ok"
     version = client.get("/version")
     assert version.status_code == 200
     assert version.json()["engineering_specification_version"] == "0.2"
 
-
 def test_openapi_generation() -> None:
     response = client.get("/openapi.json")
     assert response.status_code == 200
     assert "/api/v1/calculations/w-section" in response.json()["paths"]
     assert "/api/v1/calculations/w-section/core" in response.json()["paths"]
-
 
 def test_sections_are_loaded_from_configured_dataset(approved_dataset) -> None:
     configure_dataset(approved_dataset)
@@ -71,13 +67,11 @@ def test_sections_are_loaded_from_configured_dataset(approved_dataset) -> None:
     assert body["total"] == 1
     assert body["items"][0]["id"] == "test-w100x19"
 
-
 def test_missing_dataset_is_structured_service_error(tmp_path) -> None:
     configure_dataset(tmp_path / "missing.json")
     response = client.get("/api/v1/sections")
     assert response.status_code == 503
     assert response.json()["detail"]["code"] == "CISC_DATASET_UNAVAILABLE"
-
 
 def test_adapter_preserves_agent2_benchmark(approved_dataset) -> None:
     configure_dataset(approved_dataset)
@@ -91,8 +85,7 @@ def test_adapter_preserves_agent2_benchmark(approved_dataset) -> None:
     assert "WARN_NONCOINCIDENT_ENVELOPE" in body["warnings"]
     assert body["engine"]["id"] == "ECS-WSECTION-CSA-S16-2019-001"
 
-
-def test_core_v03_writeback_is_canonical_and_traceable(approved_dataset) -> None:
+def test_legacy_core_v03_request_is_normalized_to_v04_writeback(approved_dataset) -> None:
     configure_dataset(approved_dataset)
     payload = {
         "model_schema_version": "0.3",
@@ -109,7 +102,7 @@ def test_core_v03_writeback_is_canonical_and_traceable(approved_dataset) -> None
     response = client.post("/api/v1/calculations/w-section/core", json=payload)
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["modelSchemaVersion"] == "0.3"
+    assert body["modelSchemaVersion"] == "0.4"
     assert body["projectId"] == "P-001"
     assert body["runId"] == "DES-W-001"
     assert body["targetIds"] == ["C-12"]
@@ -117,10 +110,10 @@ def test_core_v03_writeback_is_canonical_and_traceable(approved_dataset) -> None
     assert body["memberDesignResults"][0]["memberId"] == "C-12"
     assert body["memberDesignResults"][0]["assignedSectionId"] == "test-w100x19"
     assert body["memberDesignResults"][0]["checks"]
-    assert body["trace"][0]["schema_version"] == "0.3"
+    assert body["trace"][0]["schema_version"] == "0.4"
+    assert body["trace"][0]["request_schema_version"] == "0.3"
 
-
-def test_core_v02_request_is_accepted_but_writeback_is_v03(approved_dataset) -> None:
+def test_core_v02_request_is_accepted_but_writeback_is_v04(approved_dataset) -> None:
     configure_dataset(approved_dataset)
     payload = {
         "model_schema_version": "0.2",
@@ -131,8 +124,7 @@ def test_core_v02_request_is_accepted_but_writeback_is_v03(approved_dataset) -> 
     }
     response = client.post("/api/v1/calculations/w-section/core", json=payload)
     assert response.status_code == 200, response.text
-    assert response.json()["modelSchemaVersion"] == "0.3"
-
+    assert response.json()["modelSchemaVersion"] == "0.4"
 
 def test_dataset_version_mismatch_rejected(approved_dataset) -> None:
     configure_dataset(approved_dataset)
@@ -142,7 +134,6 @@ def test_dataset_version_mismatch_rejected(approved_dataset) -> None:
     assert response.status_code == 409
     assert response.json()["detail"]["code"] == "CISC_DATASET_VERSION_MISMATCH"
 
-
 def test_engineering_validation_translated_to_422(approved_dataset) -> None:
     configure_dataset(approved_dataset)
     payload = benchmark_request()
@@ -150,7 +141,6 @@ def test_engineering_validation_translated_to_422(approved_dataset) -> None:
     response = client.post("/api/v1/calculations/w-section", json=payload)
     assert response.status_code == 422
     assert response.json()["detail"]["code"] == "ENGINEERING_INPUT_INVALID"
-
 
 def test_report_preview_and_official_preview_are_temporarily_available(approved_dataset) -> None:
     configure_dataset(approved_dataset)
@@ -164,7 +154,6 @@ def test_report_preview_and_official_preview_are_temporarily_available(approved_
         "design_run_id": "DES-W-001",
         "member_id": "C-12",
     }
-
     preview = client.post("/api/v1/reports/preview", json=request)
     assert preview.status_code == 200
     assert preview.json()["status"] == "preview"
