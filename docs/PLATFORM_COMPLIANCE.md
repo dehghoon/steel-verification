@@ -2,40 +2,56 @@
 
 Canonical source of truth: `dehghoon/linkoteq-structural-core`.
 
-Target Core schema: **v0.3**.
+Target Core schema: **v0.5**.
 
 ## Integration status
 
 - [x] Standalone W-section calculator remains available.
-- [x] Integrated Core endpoint uses stable `project_id`, `run_id`, `member_id`, `analysis_run_id` and `load_combination_id` references.
-- [x] New integration requests default to Core v0.3.
-- [x] Core v0.2 request envelopes remain accepted during migration.
-- [x] Writeback is normalized to Core v0.3.
-- [x] Canonical `DesignRun` is returned.
-- [x] Canonical `MemberDesignResult` is returned.
-- [x] Individual utilization checks are mapped to canonical `DesignCheck` records.
-- [x] Assigned section ID, governing check, utilization, warnings and traceability are preserved.
-- [x] Calculator-private `VerificationResponse` remains available as a compatibility/detail payload.
-- [x] Report preview includes additive Core v0.3-compatible report metadata while preserving the existing standalone response fields.
-- [x] Regression tests cover Core v0.3 writeback, legacy v0.2 request migration and report source references.
+- [x] Existing verified GPT-2 engineering engine remains unchanged.
+- [x] Canonical Core v0.5 request/writeback model is implemented in `backend/app/models/core_contract_v05.py`.
+- [x] Canonical endpoint is available at `POST /api/v1/calculations/w-section/core/v0.5`.
+- [x] `inputs.memberId` is validated against `targetIds`.
+- [x] Integrated execution calls the verified engine only through `request.inputs.verification`.
+- [x] Legacy `POST /api/v1/calculations/w-section/core` endpoint remains available for backward compatibility.
+- [x] Core v0.5 writeback preserves project, run and member identity.
+- [x] Internal member-force integration accepts only `member-local` coordinates.
+- [x] Station records support arbitrary station counts.
+- [x] Station `x` is preserved and `xRatio` remains optional.
+- [x] Canonical `DesignRun`, `MemberDesignResult` and `DesignCheck` records are returned.
+- [x] Warnings, errors and traceability records are preserved.
+- [x] Contract tests cover Core v0.5 identity, coordinate semantics, station handling, writeback, target mismatch and standalone regression.
+- [ ] Backend test suite execution is verified after this migration.
+- [ ] Frontend production build is verified after this migration.
+- [ ] Standalone smoke test is verified in the target deployment environment.
+- [ ] Core v0.5 integration smoke test is verified in the target deployment environment.
+- [ ] Production deployment health is verified.
+- [ ] Representative production calculation is verified.
 
 ## Canonical boundary
 
 Integrated calculation endpoint:
 
-`POST /api/v1/calculations/w-section/core`
+`POST /api/v1/calculations/w-section/core/v0.5`
 
-Required engineering identity:
+Required envelope fields:
 
-- `model_schema_version`
-- `project_id`
-- `run_id`
+- `modelSchemaVersion`
+- `projectId`
+- `runId`
 - `calculator`
-- `calculator_version`
-- `target_ids` / `member_id`
-- optional `analysis_run_id`
-- optional `load_combination_id`
-- calculator-specific `verification` input
+- `calculatorVersion`
+- `targetIds`
+- `inputs.memberId`
+- `inputs.verification`
+
+Optional analysis references include:
+
+- `inputs.analysisRunId`
+- `inputs.loadCombinationId`
+- `inputs.forceCoordinateSystem`
+- `inputs.forceStations`
+
+Internal member-force data must use `member-local` coordinates. Solver-native PyNite objects must not cross this boundary.
 
 Canonical writeback includes:
 
@@ -51,27 +67,36 @@ Canonical writeback includes:
 - `errors`
 - `trace`
 
-## Units
+## PyNite boundary
 
-The existing W-section engineering API remains responsible for explicit engineering units at its input/output boundary. Platform consumers must not infer units from field names. Reported engineering values retain their explicit `unit` field.
+W-Section does not call PyNite directly. Analysis results must arrive through canonical Core analysis records or the Core Analysis Adapter boundary. Solver-native classes are not part of the W-Section integration contract.
+
+## Standalone compatibility
+
+`POST /api/v1/calculations/w-section` remains the standalone engineering endpoint.
+
+`POST /api/v1/calculations/w-section/core` remains the legacy Core compatibility endpoint until deprecation is explicitly approved.
+
+The Core v0.5 integration delegates engineering execution to the same verified engine used by standalone mode. No engineering formulas, checks, warnings, units or applicability logic are duplicated in the integration layer.
 
 ## Reports
 
-Reports are consumers of engineering results, not a second calculation source. The report preview now exposes `canonical_report` with Core v0.3 identifiers and source references while retaining the existing UI-oriented `sections` payload for backward compatibility.
+Reports remain consumers of canonical engineering facts. Report rendering must not recalculate or reinterpret engineering results. Official PDF authorization remains a server-side entitlement concern and is outside the Core v0.5 calculation migration itself.
 
 ## Release gate
 
-Before production release, verify:
+Do not mark the Core v0.5 migration complete until all applicable verification gates in the GPT-4 work order pass:
 
-- [ ] Backend tests pass in CI.
-- [ ] Web build passes.
-- [ ] Standalone calculator smoke test passes.
-- [ ] 3D Model integration smoke test passes with a real member ID and analysis run ID.
-- [ ] Core v0.3 response is consumed without an application-specific adapter.
-- [ ] Report source references match the originating design/member IDs.
-- [ ] Production entitlement/authentication is restored for official reports.
-- [ ] Deployment smoke test passes on the production domain.
+- backend tests;
+- frontend production build;
+- standalone smoke test;
+- Core v0.5 integration smoke test;
+- healthy production deployment;
+- representative production calculation;
+- report/auth/entitlement verification where applicable.
+
+`docs/TEST_RESULTS.md` must only be updated after tests are actually executed.
 
 ## Compatibility rule
 
-Do not duplicate or fork the platform-wide structural contract in this repository. Calculator-private models may remain local, but cross-product integration types must follow `linkoteq-structural-core`.
+Do not duplicate or fork the platform-wide structural contract in this repository. Calculator-private models may remain local, but cross-product integration must follow `linkoteq-structural-core`.
