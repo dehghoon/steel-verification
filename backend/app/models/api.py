@@ -100,6 +100,11 @@ class ApiError(BaseModel):
 class ReportPreviewRequest(BaseModel):
     calculation: VerificationResponse
     project: dict[str, Any] = Field(default_factory=dict)
+    model_schema_version: Literal["0.2", "0.3"] = "0.3"
+    project_id: str | None = None
+    report_request_id: str | None = None
+    design_run_id: str | None = None
+    member_id: str | None = None
 
 
 class ReportPreviewResponse(BaseModel):
@@ -108,3 +113,4 @@ class ReportPreviewResponse(BaseModel):
     sections: list[dict[str, Any]]
     official_download_available: bool
     limitation: str
+    canonical_report: dict[str, Any] | None = None
