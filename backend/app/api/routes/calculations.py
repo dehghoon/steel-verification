@@ -27,11 +27,12 @@ def calculate(request: VerificationRequest) -> VerificationResponse:
 
 @router.post("/w-section/core", response_model=CoreWSectionResponse)
 def calculate_from_core(request: CoreWSectionRequest) -> CoreWSectionResponse:
-    """Integrated Structural Core v0.2 entry point.
+    """Integrated Structural Core v0.3 entry point.
 
-    This runs the same verified calculation engine as the standalone page. The additional
-    Core identifiers make the result traceable to one project/member/analysis run without
-    creating a second calculation implementation.
+    The same verified engineering engine powers standalone and platform workflows. The
+    integration envelope carries stable project/run/member references and returns canonical
+    DesignRun, MemberDesignResult and DesignCheck records for 3D Model/report consumers.
+    v0.2 request envelopes are accepted during migration but writeback is canonical v0.3.
     """
     calculation = _run(request.verification)
     return build_core_response(request, calculation)
