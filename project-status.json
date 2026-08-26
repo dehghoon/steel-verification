@@ -1,0 +1,50 @@
+{
+  "project": "W-Section Steel Verification",
+  "repository": "dehghoon/steel-verification",
+  "coreVersion": "0.5",
+  "overallStatus": "in-progress",
+  "currentStage": "Stage 4: Linkoteq Integration",
+  "stages": {
+    "stage1_gpt1_specification": "complete",
+    "stage2_gpt2_python_engine": "complete",
+    "stage3_gpt3_application_repository": "complete",
+    "stage4_linkoteq_integration": "in-progress",
+    "stage5_production_verification": "blocked"
+  },
+  "coreCompliance": "migration-required",
+  "calculationEngine": {
+    "owner": "GPT-2",
+    "status": "preserved",
+    "changeRequired": false
+  },
+  "migration": {
+    "from": "0.4 boundary / older documentation references",
+    "to": "0.5",
+    "newArtifact": "backend/app/models/core_contract_v05.py",
+    "newArtifactCommit": "aefb84f68c07484a3cd104bce0cf6c7999f7978c",
+    "endpointWiring": "blocked",
+    "reason": "Existing route file requires GitHub Contents API update with current SHA; available connector cannot supply SHA on update."
+  },
+  "pynite": {
+    "integrationRule": "PyNite must be accessed only through the Core Analysis Adapter boundary.",
+    "directCalculatorDependency": "not-required-for-W-section-design-calculator"
+  },
+  "blockers": [
+    {
+      "owner": "GPT-3",
+      "blocker": "Wire the Core v0.5 request/writeback model into the existing FastAPI calculation route and add contract tests.",
+      "nextAction": "Update backend/app/api/routes/calculations.py using SHA-aware GitHub tooling or normal git workflow."
+    },
+    {
+      "owner": "GPT-3/GPT-4",
+      "blocker": "Run CI, standalone smoke test, Core v0.5 integration smoke test, and deployment verification.",
+      "nextAction": "Verify CI and production after endpoint wiring."
+    },
+    {
+      "owner": "Product/Deployment",
+      "blocker": "Approved production CISC dataset and official report entitlement/auth remain required.",
+      "nextAction": "Configure approved dataset and production entitlement/report flow."
+    }
+  ],
+  "nextStageMayBegin": false
+}
