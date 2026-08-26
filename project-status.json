@@ -3,15 +3,15 @@
   "repository": "dehghoon/steel-verification",
   "coreVersion": "0.5",
   "overallStatus": "in-progress",
-  "currentStage": "Stage 4: Linkoteq Integration",
+  "currentStage": "Stage 4: Linkoteq Integration Verification",
   "stages": {
     "stage1_gpt1_specification": "complete",
     "stage2_gpt2_python_engine": "complete",
     "stage3_gpt3_application_repository": "complete",
-    "stage4_linkoteq_integration": "in-progress",
+    "stage4_linkoteq_integration": "implementation-complete-verification-pending",
     "stage5_production_verification": "blocked"
   },
-  "coreCompliance": "migration-required",
+  "coreCompliance": "v0.5-wired-verification-pending",
   "calculationEngine": {
     "owner": "GPT-2",
     "status": "preserved",
@@ -20,29 +20,39 @@
   "migration": {
     "from": "0.4 boundary / older documentation references",
     "to": "0.5",
-    "newArtifact": "backend/app/models/core_contract_v05.py",
-    "newArtifactCommit": "aefb84f68c07484a3cd104bce0cf6c7999f7978c",
-    "endpointWiring": "blocked",
-    "reason": "Existing route file requires GitHub Contents API update with current SHA; available connector cannot supply SHA on update."
+    "boundaryArtifact": "backend/app/models/core_contract_v05.py",
+    "canonicalEndpoint": "POST /api/v1/calculations/w-section/core/v0.5",
+    "legacyEndpointPreserved": "POST /api/v1/calculations/w-section/core",
+    "endpointWiring": "complete",
+    "contractTestsAdded": "backend/tests/test_core_v05.py",
+    "verificationStatus": "not-run-in-current-github-session"
   },
   "pynite": {
     "integrationRule": "PyNite must be accessed only through the Core Analysis Adapter boundary.",
     "directCalculatorDependency": "not-required-for-W-section-design-calculator"
   },
+  "completedByGPT3": [
+    "Wired Core v0.5 request/writeback model into FastAPI calculations route.",
+    "Added canonical POST /api/v1/calculations/w-section/core/v0.5 endpoint.",
+    "Added memberId to targetIds validation.",
+    "Preserved standalone and legacy Core endpoints.",
+    "Added Core v0.5 contract and standalone regression tests.",
+    "Updated platform compliance documentation to Core v0.5."
+  ],
   "blockers": [
     {
-      "owner": "GPT-3",
-      "blocker": "Wire the Core v0.5 request/writeback model into the existing FastAPI calculation route and add contract tests.",
-      "nextAction": "Update backend/app/api/routes/calculations.py using SHA-aware GitHub tooling or normal git workflow."
-    },
-    {
       "owner": "GPT-3/GPT-4",
-      "blocker": "Run CI, standalone smoke test, Core v0.5 integration smoke test, and deployment verification.",
-      "nextAction": "Verify CI and production after endpoint wiring."
+      "blocker": "Run backend tests, frontend production build, standalone smoke test and Core v0.5 integration smoke test.",
+      "nextAction": "Execute verification in CI or a repository checkout with dependencies available."
     },
     {
       "owner": "Product/Deployment",
-      "blocker": "Approved production CISC dataset and official report entitlement/auth remain required.",
+      "blocker": "Verify healthy production deployment and a representative production calculation.",
+      "nextAction": "Run deployment health and production calculation checks after CI passes."
+    },
+    {
+      "owner": "Product/Deployment",
+      "blocker": "Approved production CISC dataset and official report entitlement/auth remain required where applicable.",
       "nextAction": "Configure approved dataset and production entitlement/report flow."
     }
   ],
