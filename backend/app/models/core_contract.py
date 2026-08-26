@@ -7,9 +7,26 @@ from pydantic import BaseModel, Field
 from .api import VerificationRequest, VerificationResponse
 
 
-CORE_SCHEMA_VERSION = "0.3"
+CORE_SCHEMA_VERSION = "0.4"
 CALCULATOR_ID = "w-section"
 CALCULATOR_VERSION = "1.0"
+
+
+class CoreMemberForceStation(BaseModel):
+    """Optional canonical v0.4 analysis reference for an integrated design request.
+
+    Internal member forces are expressed in member-local axes. x is measured from the
+    member start node along local +x; xRatio may be supplied as a normalized 0..1 position.
+    """
+
+    x: float
+    xRatio: float | None = None
+    axial: float | None = None
+    shearY: float | None = None
+    shearZ: float | None = None
+    torsion: float | None = None
+    momentY: float | None = None
+    momentZ: float | None = None
 
 
 class CoreWSectionRequest(BaseModel):
@@ -17,10 +34,14 @@ class CoreWSectionRequest(BaseModel):
 
     The standalone VerificationRequest/UI remain unchanged. Integrated callers identify the
     project, run and target member while reusing the exact same verified calculation engine.
-    v0.2 requests remain accepted during migration; new callers should emit v0.3.
+    v0.2/v0.3 requests remain accepted during migration; new callers should emit v0.4.
+
+    For v0.4, member internal forces are member-local by contract. The existing `verification`
+    payload remains the calculator input so standalone and integrated execution share one
+    engineering engine. Optional stations provide traceability to the source analysis result.
     """
 
-    model_schema_version: Literal["0.2", "0.3"] = CORE_SCHEMA_VERSION
+    model_schema_version: Literal["0.2", "0.3", "0.4"] = CORE_SCHEMA_VERSION
     project_id: str
     run_id: str
     calculator: Literal["w-section"] = CALCULATOR_ID
@@ -29,6 +50,8 @@ class CoreWSectionRequest(BaseModel):
     member_id: str
     analysis_run_id: str | None = None
     load_combination_id: str | None = None
+    force_coordinate_system: Literal["member-local"] = "member-local"
+    force_stations: list[CoreMemberForceStation] = Field(default_factory=list)
     verification: VerificationRequest
 
 
@@ -39,6 +62,7 @@ class CoreDesignCheck(BaseModel):
     utilization: float | None = None
     loadCombinationId: str | None = None
     codeClause: str | None = None
+    station: float | None = None
     notes: list[str] = Field(default_factory=list)
 
 
@@ -46,7 +70,7 @@ class CoreDesignRun(BaseModel):
     id: str
     calculator: str
     calculatorVersion: str
-    modelSchemaVersion: Literal["0.3"] = CORE_SCHEMA_VERSION
+    modelSchemaVersion: Literal["0.4"] = CORE_SCHEMA_VERSION
     targetIds: list[str]
     analysisRunId: str | None = None
     status: Literal["pending", "ok", "warning", "error"]
@@ -76,8 +100,8 @@ class CoreMemberDesignResult(BaseModel):
 
 
 class CoreWSectionResponse(BaseModel):
-    # Canonical v0.3 writeback
-    modelSchemaVersion: Literal["0.3"] = CORE_SCHEMA_VERSION
+    # Canonical v0.4 writeback.
+    modelSchemaVersion: Literal["0.4"] = CORE_SCHEMA_VERSION
     projectId: str
     runId: str
     calculator: str = CALCULATOR_ID
@@ -85,6 +109,7 @@ class CoreWSectionResponse(BaseModel):
     targetIds: list[str]
     designRun: CoreDesignRun
     memberDesignResults: list[CoreMemberDesignResult]
+    forceCoordinateSystem: Literal["member-local"] = "member-local"
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     trace: list[dict[str, Any]] = Field(default_factory=list)
@@ -140,8 +165,19 @@ def build_core_response(payload: CoreWSectionRequest, calculation: VerificationR
         else (max(calculation.utilization_ratios.values()) if calculation.utilization_ratios else None)
     )
     trace = [
-        {"stage": "core_contract", "status": "PASS", "schema_version": CORE_SCHEMA_VERSION, "request_schema_version": payload.model_schema_version},
-        {"stage": "analysis_reference", "analysis_run_id": payload.analysis_run_id, "load_combination_id": payload.load_combination_id},
+        {
+            "stage": "core_contract",
+            "status": "PASS",
+            "schema_version": CORE_SCHEMA_VERSION,
+            "request_schema_version": payload.model_schema_version,
+        },
+        {
+            "stage": "analysis_reference",
+            "analysis_run_id": payload.analysis_run_id,
+            "load_combination_id": payload.load_combination_id,
+            "force_coordinate_system": "member-local",
+            "station_count": len(payload.force_stations),
+        },
         {"stage": "w_section_verification", "status": calculation.overall_status},
     ]
     design_run = CoreDesignRun(
