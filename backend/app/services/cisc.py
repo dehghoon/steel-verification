@@ -57,6 +57,25 @@ class CiscDatasetService:
                     "message": "Dataset must contain a top-level sections array.",
                 },
             )
+
+        default_source = payload.get("source")
+        default_version = payload.get("dataset_version")
+        default_units = payload.get("units")
+        for item in payload["sections"]:
+            if not isinstance(item, dict):
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "code": "CISC_DATASET_INVALID",
+                        "message": "Every CISC section record must be an object.",
+                    },
+                )
+            if "source" not in item and isinstance(default_source, str):
+                item["source"] = default_source
+            if "dataset_version" not in item and isinstance(default_version, str):
+                item["dataset_version"] = default_version
+            if "units" not in item and isinstance(default_units, dict):
+                item["units"] = default_units
         return payload
 
     def _load_raw(self) -> dict:
