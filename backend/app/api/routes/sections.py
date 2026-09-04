@@ -18,7 +18,8 @@ def list_sections(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> SectionListResponse:
-    items, total, version = service().list_sections(query, family, limit, offset)    return SectionListResponse(items=items, total=total, dataset_version=version)
+    items, total, version = service().list_sections(query, family, limit, offset)
+    return SectionListResponse(items=items, total=total, dataset_version=version)
 
 
 @router.get("/{section_id}", response_model=SectionRecord)
