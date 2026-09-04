@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import gzip
 import json
 from pathlib import Path
@@ -33,43 +34,23 @@ class CiscDatasetService:
         self.path = Path(path)
 
     @staticmethod
-    def _read_payload(path: Path) -> dict:
-        try:
-            if path.suffix == ".gz":
-                with gzip.open(path, "rt", encoding="utf-8") as stream:
-                    payload = json.load(stream)
-            else:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={
-                    "code": "CISC_DATASET_INVALID",
-                    "message": "Configured CISC dataset could not be read.",
-                },
-            ) from exc
+    def _invalid(message: str) -> HTTPException:
+        return HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "CISC_DATASET_INVALID", "message": message},
+        )
 
+    @classmethod
+    def _normalize_payload(cls, payload: object) -> dict:
         if not isinstance(payload, dict) or not isinstance(payload.get("sections"), list):
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={
-                    "code": "CISC_DATASET_INVALID",
-                    "message": "Dataset must contain a top-level sections array.",
-                },
-            )
+            raise cls._invalid("Dataset must contain a top-level sections array.")
 
         default_source = payload.get("source")
         default_version = payload.get("dataset_version")
         default_units = payload.get("units")
         for item in payload["sections"]:
             if not isinstance(item, dict):
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={
-                        "code": "CISC_DATASET_INVALID",
-                        "message": "Every CISC section record must be an object.",
-                    },
-                )
+                raise cls._invalid("Every CISC section record must be an object.")
             if "source" not in item and isinstance(default_source, str):
                 item["source"] = default_source
             if "dataset_version" not in item and isinstance(default_version, str):
@@ -77,6 +58,28 @@ class CiscDatasetService:
             if "units" not in item and isinstance(default_units, dict):
                 item["units"] = default_units
         return payload
+
+    @classmethod
+    def _read_payload(cls, path: Path) -> dict:
+        try:
+            if path.suffix == ".gz":
+                with gzip.open(path, "rt", encoding="utf-8") as stream:
+                    payload = json.load(stream)
+            else:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise cls._invalid("Configured CISC dataset could not be read.") from exc
+        return cls._normalize_payload(payload)
+
+    @classmethod
+    def _read_encoded_parts(cls, paths: list[Path]) -> dict:
+        try:
+            encoded = "".join(path.read_text(encoding="ascii").strip() for path in paths)
+            compressed = base64.b64decode(encoded, validate=True)
+            payload = json.loads(gzip.decompress(compressed).decode("utf-8"))
+        except (OSError, ValueError, gzip.BadGzipFile, json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise cls._invalid("Configured CISC dataset parts could not be decoded.") from exc
+        return cls._normalize_payload(payload)
 
     def _load_raw(self) -> dict:
         if not self.path.exists():
@@ -91,12 +94,11 @@ class CiscDatasetService:
         if self.path.is_file():
             return self._read_payload(self.path)
 
-        shard_paths = sorted(
-            [
-                *self.path.glob("*.json"),
-                *self.path.glob("*.json.gz"),
-            ]
-        )
+        encoded_parts = sorted(self.path.glob("*.b64part"))
+        if encoded_parts:
+            return self._read_encoded_parts(encoded_parts)
+
+        shard_paths = sorted([*self.path.glob("*.json"), *self.path.glob("*.json.gz")])
         if not shard_paths:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -112,23 +114,11 @@ class CiscDatasetService:
             payload = self._read_payload(shard_path)
             shard_version = payload.get("dataset_version")
             if not isinstance(shard_version, str) or not shard_version.strip():
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={
-                        "code": "CISC_DATASET_INVALID",
-                        "message": f"Dataset version is missing in shard {shard_path.name}.",
-                    },
-                )
+                raise self._invalid(f"Dataset version is missing in shard {shard_path.name}.")
             if version is None:
                 version = shard_version
             elif version != shard_version:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={
-                        "code": "CISC_DATASET_VERSION_MISMATCH",
-                        "message": "CISC dataset shards do not share one approved dataset version.",
-                    },
-                )
+                raise self._invalid("CISC dataset shards do not share one approved dataset version.")
             sections.extend(payload["sections"])
 
         return {"dataset_version": version, "sections": sections}
@@ -137,10 +127,7 @@ class CiscDatasetService:
         payload = self._load_raw()
         version = payload.get("dataset_version")
         if not isinstance(version, str) or not version.strip():
-            raise HTTPException(
-                status_code=500,
-                detail={"code": "CISC_DATASET_INVALID", "message": "Dataset version is missing."},
-            )
+            raise self._invalid("Dataset version is missing.")
         return version
 
     def list_sections(
@@ -155,10 +142,10 @@ class CiscDatasetService:
         records = [SectionRecord.model_validate(item) for item in payload["sections"]]
         if query:
             q = query.casefold()
-            records = [r for r in records if q in r.designation.casefold()]
+            records = [record for record in records if q in record.designation.casefold()]
         if family:
             f = family.casefold()
-            records = [r for r in records if r.family.casefold() == f]
+            records = [record for record in records if record.family.casefold() == f]
         total = len(records)
         return records[offset : offset + limit], total, version
 
