@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 
@@ -31,17 +32,14 @@ class CiscDatasetService:
     def __init__(self, path: str):
         self.path = Path(path)
 
-    def _load_raw(self) -> dict:
-        if not self.path.exists():
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail={
-                    "code": "CISC_DATASET_UNAVAILABLE",
-                    "message": "Approved CISC dataset is not configured.",
-                },
-            )
+    @staticmethod
+    def _read_payload(path: Path) -> dict:
         try:
-            payload = json.loads(self.path.read_text(encoding="utf-8"))
+            if path.suffix == ".gz":
+                with gzip.open(path, "rt", encoding="utf-8") as stream:
+                    payload = json.load(stream)
+            else:
+                payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -50,6 +48,7 @@ class CiscDatasetService:
                     "message": "Configured CISC dataset could not be read.",
                 },
             ) from exc
+
         if not isinstance(payload, dict) or not isinstance(payload.get("sections"), list):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -59,6 +58,61 @@ class CiscDatasetService:
                 },
             )
         return payload
+
+    def _load_raw(self) -> dict:
+        if not self.path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "CISC_DATASET_UNAVAILABLE",
+                    "message": "Approved CISC dataset is not configured.",
+                },
+            )
+
+        if self.path.is_file():
+            return self._read_payload(self.path)
+
+        shard_paths = sorted(
+            [
+                *self.path.glob("*.json"),
+                *self.path.glob("*.json.gz"),
+            ]
+        )
+        if not shard_paths:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "CISC_DATASET_UNAVAILABLE",
+                    "message": "Approved CISC dataset directory contains no dataset shards.",
+                },
+            )
+
+        version: str | None = None
+        sections: list[dict] = []
+        for shard_path in shard_paths:
+            payload = self._read_payload(shard_path)
+            shard_version = payload.get("dataset_version")
+            if not isinstance(shard_version, str) or not shard_version.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "code": "CISC_DATASET_INVALID",
+                        "message": f"Dataset version is missing in shard {shard_path.name}.",
+                    },
+                )
+            if version is None:
+                version = shard_version
+            elif version != shard_version:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "code": "CISC_DATASET_VERSION_MISMATCH",
+                        "message": "CISC dataset shards do not share one approved dataset version.",
+                    },
+                )
+            sections.extend(payload["sections"])
+
+        return {"dataset_version": version, "sections": sections}
 
     def dataset_version(self) -> str:
         payload = self._load_raw()
@@ -70,7 +124,13 @@ class CiscDatasetService:
             )
         return version
 
-    def list_sections(self, query: str | None, family: str | None, limit: int, offset: int) -> tuple[list[SectionRecord], int, str]:
+    def list_sections(
+        self,
+        query: str | None,
+        family: str | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[SectionRecord], int, str]:
         payload = self._load_raw()
         version = self.dataset_version()
         records = [SectionRecord.model_validate(item) for item in payload["sections"]]
@@ -81,7 +141,7 @@ class CiscDatasetService:
             f = family.casefold()
             records = [r for r in records if r.family.casefold() == f]
         total = len(records)
-        return records[offset: offset + limit], total, version
+        return records[offset : offset + limit], total, version
 
     def get_section(self, section_id: str, designation: str, dataset_version: str) -> SectionRecord:
         payload = self._load_raw()
