@@ -9,7 +9,7 @@ class Settings:
     app_name: str = "Steel Verification API"
     app_version: str = "0.1.0"
     api_prefix: str = "/api/v1"
-    cisc_dataset_path: str = os.getenv("CISC_DATASET_PATH", "./data/cisc/cisc_sections.json")
+    cisc_dataset_path: str = os.getenv("CISC_DATASET_PATH", "./data/cisc/sst13")
     allowed_origins_raw: str = os.getenv("API_ALLOWED_ORIGINS", "http://localhost:3000")
     report_download_enabled: bool = os.getenv("REPORT_DOWNLOAD_ENABLED", "false").lower() == "true"
 
