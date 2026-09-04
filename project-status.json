@@ -2,16 +2,16 @@
   "project": "W-Section Steel Verification",
   "repository": "dehghoon/steel-verification",
   "coreVersion": "0.5",
-  "overallStatus": "in-progress",
-  "currentStage": "Stage 4: Linkoteq Integration Verification",
+  "overallStatus": "deployment-triggered",
+  "currentStage": "Stage 5: Production Verification",
   "stages": {
     "stage1_gpt1_specification": "complete",
     "stage2_gpt2_python_engine": "complete",
     "stage3_gpt3_application_repository": "complete",
-    "stage4_linkoteq_integration": "ci-verified-production-pending",
-    "stage5_production_verification": "blocked"
+    "stage4_linkoteq_integration": "complete",
+    "stage5_production_verification": "deployment-triggered-pending-verification"
   },
-  "coreCompliance": "v0.5-ci-verified-production-pending",
+  "coreCompliance": "v0.5-source-verified",
   "calculationEngine": {
     "owner": "GPT-2",
     "status": "preserved",
@@ -30,33 +30,22 @@
     "ciTriggerHead": "905454ae9840217c11a2a076d9dcd0a46a76bd4e",
     "ciRun": 96,
     "backendCiStatus": "succeeded",
-    "verificationStatus": "ci-verified-production-pending"
+    "verificationStatus": "previously-ci-verified"
+  },
+  "ciscDataset": {
+    "version": "cisc-sst13-2026-08-25",
+    "recordCount": 1705,
+    "familyCount": 17,
+    "status": "active-source-verified"
+  },
+  "productionApproval": {
+    "status": "approved",
+    "source": "user-confirmation",
+    "approvedAt": "2026-09-04"
   },
   "pynite": {
     "integrationRule": "PyNite must be accessed only through the Core Analysis Adapter boundary.",
     "directCalculatorDependency": "not-required-for-W-section-design-calculator"
   },
-  "completedByGPT3": [
-    "Wired Core v0.5 request/writeback model into FastAPI calculations route.",
-    "Added canonical POST /api/v1/calculations/w-section/core/v0.5 endpoint.",
-    "Added memberId to targetIds validation.",
-    "Preserved standalone and legacy Core endpoints.",
-    "Added Core v0.5 contract and standalone regression tests.",
-    "Aligned stale legacy compatibility assertions with current Core 0.4 normalized writeback behavior.",
-    "Preserved GPT-2 engineering engine and packages/engineering/steel_w_section_csa_s16.",
-    "Verified backend CI success in GitHub Actions Run #96."
-  ],
-  "blockers": [
-    {
-      "owner": "Product/Deployment",
-      "blocker": "Verify healthy production deployment and a representative production calculation.",
-      "nextAction": "Run deployment health and production calculation checks."
-    },
-    {
-      "owner": "Product/Deployment",
-      "blocker": "Approved production CISC dataset and official report entitlement/auth remain required where applicable.",
-      "nextAction": "Configure approved dataset and production entitlement/report flow."
-    }
-  ],
-  "nextStageMayBegin": false
+  "nextStageMayBegin": true
 }
