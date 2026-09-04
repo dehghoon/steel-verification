@@ -1,0 +1,12 @@
+{
+  "dataset_version": "cisc-sst13-2026-08-25",
+  "source_workbook": "CISC_StructuralSectionTables_SST13_2026-08-25.xlsx",
+  "source": "CISC",
+  "record_count": 1705,
+  "family_count": 17,
+  "normalized_json_sha256": "7f1553f56ec6821159c7fc27fba8106437b8d64d331c5f1d0d55fa2213084834",
+  "xz_sha256": "3c79de2710d1e55e079d1d83151ed5109b655b126d4686cf58f95abdfa70ce20",
+  "encoding": "base64",
+  "compression": "xz",
+  "parts_pattern": "*.xzpart"
+}
