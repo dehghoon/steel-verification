@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import gzip
 import json
+import lzma
 from pathlib import Path
 
 from fastapi import HTTPException, status
@@ -72,12 +73,23 @@ class CiscDatasetService:
         return cls._normalize_payload(payload)
 
     @classmethod
-    def _read_encoded_parts(cls, paths: list[Path]) -> dict:
+    def _read_encoded_parts(cls, paths: list[Path], compression: str = "gzip") -> dict:
         try:
             encoded = "".join(path.read_text(encoding="ascii").strip() for path in paths)
             compressed = base64.b64decode(encoded, validate=True)
-            payload = json.loads(gzip.decompress(compressed).decode("utf-8"))
-        except (OSError, ValueError, gzip.BadGzipFile, json.JSONDecodeError, UnicodeDecodeError) as exc:
+            if compression == "xz":
+                decoded = lzma.decompress(compressed)
+            else:
+                decoded = gzip.decompress(compressed)
+            payload = json.loads(decoded.decode("utf-8"))
+        except (
+            OSError,
+            ValueError,
+            gzip.BadGzipFile,
+            lzma.LZMAError,
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+        ) as exc:
             raise cls._invalid("Configured CISC dataset parts could not be decoded.") from exc
         return cls._normalize_payload(payload)
 
@@ -93,6 +105,10 @@ class CiscDatasetService:
 
         if self.path.is_file():
             return self._read_payload(self.path)
+
+        xz_parts = sorted(self.path.glob("*.xzpart"))
+        if xz_parts:
+            return self._read_encoded_parts(xz_parts, compression="xz")
 
         encoded_parts = sorted(self.path.glob("*.b64part"))
         if encoded_parts:
