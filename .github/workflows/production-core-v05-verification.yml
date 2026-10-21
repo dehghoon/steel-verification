@@ -1,0 +1,155 @@
+name: W-Section Production Core v0.5 Verification
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/production-core-v05-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      API_BASE_URL: https://steel-verification.onrender.com
+    steps:
+      - name: Verify live production API and calculation contract
+        shell: bash
+        run: |
+          mkdir -p verification-artifacts
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          base = os.environ['API_BASE_URL'].rstrip('/')
+          report = {
+              'timestamp_utc': datetime.now(timezone.utc).isoformat(),
+              'api_base_url': base,
+              'checks': {},
+              'status': 'FAIL',
+          }
+          destination = Path('verification-artifacts/production-core-v05.json')
+
+          def request(path, payload=None):
+              data = None if payload is None else json.dumps(payload).encode('utf-8')
+              headers = {'Accept': 'application/json'}
+              if data is not None:
+                  headers['Content-Type'] = 'application/json'
+              req = urllib.request.Request(base + path, data=data, headers=headers,
+                                           method='POST' if data is not None else 'GET')
+              for attempt in range(3):
+                  try:
+                      with urllib.request.urlopen(req, timeout=100) as response:
+                          return response.status, json.load(response)
+                  except (urllib.error.URLError, TimeoutError) as exc:
+                      if attempt == 2 or isinstance(exc, urllib.error.HTTPError):
+                          raise RuntimeError(f'{path}: {exc}') from exc
+                      time.sleep(10)
+
+          def check(name, condition):
+              report['checks'][name] = 'PASS' if condition else 'FAIL'
+              if not condition:
+                  raise AssertionError(f'{name}: FAIL')
+
+          try:
+              code, health = request('/health')
+              check('health', code == 200 and health.get('status') == 'ok')
+              code, version = request('/version')
+              check('engine_version', code == 200 and version.get('engineering_engine') == 'ECS-WSECTION-CSA-S16-2019-001')
+              code, schema = request('/openapi.json')
+              check('core_v05_route', code == 200 and 'post' in schema.get('paths', {}).get('/api/v1/calculations/w-section/core/v0.5', {}))
+              code, sections = request('/api/v1/sections?query=W100X19&limit=20')
+              matches = [s for s in sections.get('items', []) if s.get('designation', '').lower() == 'w100x19']
+              check('production_section', code == 200 and len(matches) == 1)
+              section = matches[0]
+              report['section_id'] = section['id']
+              report['dataset_version'] = section['dataset_version']
+              verification = {
+                  'section_id': section['id'],
+                  'designation': section['designation'],
+                  'dataset_version': section['dataset_version'],
+                  'material': {'yield_strength': 248.0, 'ultimate_strength': 414.0,
+                               'elastic_modulus': 200000.0, 'shear_modulus': 77000.0,
+                               'mass_density': 7850.0},
+                  'geometry': {'length_major': 500.0, 'length_minor': 500.0,
+                               'length_torsional': 500.0,
+                               'effective_length_factor_major': 0.8,
+                               'effective_length_factor_minor': 0.8,
+                               'effective_length_factor_torsional': 0.8},
+                  'actions': {'compression_force': 1137.0, 'tension_force': 8510.0,
+                              'shear_major': 3820.0, 'shear_minor': 5930.0,
+                              'moment_major': 2380000.0, 'moment_minor': 3630000.0,
+                              'live_load_deflection': 0.082},
+                  'deflection_limit_ratio': 300.0,
+                  'continuous_lateral_restraint_confirmed': False,
+                  'coincident_force_set': False,
+                  'net_area_equals_gross_confirmed': True,
+              }
+              payload = {
+                  'modelSchemaVersion': '0.5', 'projectId': 'PROD-SMOKE',
+                  'runId': 'PROD-W-001', 'calculator': 'w-section',
+                  'calculatorVersion': '1.0', 'targetIds': ['M-PROD-001'],
+                  'inputs': {
+                      'memberId': 'M-PROD-001', 'verification': verification,
+                      'analysisRunId': 'PROD-AN-001', 'loadCombinationId': 'ULS-1',
+                      'forceCoordinateSystem': 'member-local',
+                      'forceStations': [
+                          {'x': 0.0, 'axial': -1137.0, 'momentZ': 0.0},
+                          {'x': 250.0, 'xRatio': 0.5, 'axial': -1137.0, 'momentZ': 2380000.0},
+                          {'x': 500.0, 'xRatio': 1.0, 'axial': -1137.0, 'momentZ': 0.0},
+                      ],
+                  },
+              }
+              standalone_code, standalone = request('/api/v1/calculations/w-section', verification)
+              core_code, core = request('/api/v1/calculations/w-section/core/v0.5', payload)
+              check('both_post_200', standalone_code == 200 and core_code == 200)
+              check('core_schema_version', core.get('modelSchemaVersion') == '0.5')
+              check('run_ids', core.get('runId') == payload['runId'] and
+                    core.get('designRun', {}).get('id') == payload['runId'])
+              check('member_ids', core.get('designRun', {}).get('targetIds') == payload['targetIds'] and
+                    len(core.get('memberDesignResults', [])) == 1 and
+                    core['memberDesignResults'][0].get('memberId') == payload['inputs']['memberId'])
+              result = core['memberDesignResults'][0]
+              check('section_id', result.get('assignedSectionId') == section['id'])
+              check('engineering_checks_present', bool(result.get('checks')))
+              expected = standalone.get('utilization_ratios', {}).get(standalone.get('governing_check'))
+              actual = result.get('utilization')
+              check('governing_utilization_matches_standalone',
+                    isinstance(expected, (int, float)) and isinstance(actual, (int, float)) and
+                    abs(expected - actual) <= 1e-10)
+              check('governing_check_matches_standalone',
+                    result.get('governingCheckId') == f"{payload['runId']}:{standalone.get('governing_check')}")
+              check('status_matches_standalone',
+                    result.get('status') == {'PASS': 'pass', 'FAIL': 'fail',
+                                            'INDETERMINATE': 'warning',
+                                            'WARNING': 'warning'}.get(standalone.get('overall_status'), 'not-checked'))
+              check('analysis_trace', any(t.get('stage') == 'analysis_reference' and
+                    t.get('stationCount') == 3 and t.get('forceCoordinateSystem') == 'member-local'
+                    for t in core.get('trace', [])))
+              report['governing_check'] = standalone.get('governing_check')
+              report['governing_utilization'] = expected
+              report['standalone_overall_status'] = standalone.get('overall_status')
+              report['status'] = 'PASS'
+          except Exception as exc:
+              report['error'] = str(exc)
+              raise
+          finally:
+              destination.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
+              print(json.dumps(report, indent=2))
+          PY
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wsection-production-core-v05-evidence
+          path: verification-artifacts/production-core-v05.json
+          if-no-files-found: warn
+          retention-days: 90
