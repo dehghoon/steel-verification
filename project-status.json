@@ -2,16 +2,16 @@
   "project": "W-Section Steel Verification",
   "repository": "dehghoon/steel-verification",
   "coreVersion": "0.5",
-  "overallStatus": "deployment-triggered",
+  "overallStatus": "production-verified",
   "currentStage": "Stage 5: Production Verification",
   "stages": {
     "stage1_gpt1_specification": "complete",
     "stage2_gpt2_python_engine": "complete",
     "stage3_gpt3_application_repository": "complete",
     "stage4_linkoteq_integration": "complete",
-    "stage5_production_verification": "deployment-triggered-pending-verification"
+    "stage5_production_verification": "complete"
   },
-  "coreCompliance": "v0.5-source-verified",
+  "coreCompliance": "v0.5-production-verified",
   "calculationEngine": {
     "owner": "GPT-2",
     "status": "preserved",
@@ -50,13 +50,13 @@
   "nextStageMayBegin": true,
   "coreAlignmentRecord": {
     "version": "0.5",
-    "status": "source-and-CI-verified",
+    "status": "production-verified",
     "contractFile": "backend/app/models/core_contract_v05.py",
     "endpoint": "POST /api/v1/calculations/w-section/core/v0.5",
     "tests": "backend/tests/test_core_v05.py",
     "ciRun": 96,
     "enginePreserved": true,
-    "productionVerification": "blocked: production Next.js READY, but canonical Core v0.5 API not exposed at public site (GET returned Next.js 404); POST calculation not verified",
+    "productionVerification": "PASS: 14/14 production checks passed on GitHub Actions run 39655892711, attempt 2",
     "productionDeployment": {
       "id": "dpl_D9cUs9oS9DBeF8y7hGtqQypR3Pkk",
       "commit": "918462a01f6037696664f8ff310669c207dda483",
@@ -66,6 +66,18 @@
       "coreV05GetHttpStatus": 404,
       "openapiGetHttpStatus": 404,
       "assessment": "Frontend deployed; FastAPI exposure or backend origin not established. GET 404 alone does not prove POST unavailable."
+    },
+    "productionVerificationEvidence": {
+      "workflowRunId": 39655892711,
+      "attempt": 2,
+      "conclusion": "success",
+      "checksPassed": 14,
+      "checksTotal": 14,
+      "artifactId": 12371197016,
+      "sectionId": "cisc-w100x19",
+      "datasetVersion": "cisc-sst13-2026-08-25",
+      "governingCheck": "biaxial_bending",
+      "governingUtilization": 0.44305410895426767
     }
   }
 }
