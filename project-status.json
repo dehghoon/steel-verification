@@ -56,6 +56,16 @@
     "tests": "backend/tests/test_core_v05.py",
     "ciRun": 96,
     "enginePreserved": true,
-    "productionVerification": "not independently confirmed; do not mark complete without live endpoint and release evidence"
+    "productionVerification": "blocked: production Next.js READY, but canonical Core v0.5 API not exposed at public site (GET returned Next.js 404); POST calculation not verified",
+    "productionDeployment": {
+      "id": "dpl_D9cUs9oS9DBeF8y7hGtqQypR3Pkk",
+      "commit": "918462a01f6037696664f8ff310669c207dda483",
+      "status": "READY",
+      "domain": "wsection.linkoteq.com",
+      "homepageHttpStatus": 200,
+      "coreV05GetHttpStatus": 404,
+      "openapiGetHttpStatus": 404,
+      "assessment": "Frontend deployed; FastAPI exposure or backend origin not established. GET 404 alone does not prove POST unavailable."
+    }
   }
 }
