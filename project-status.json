@@ -47,5 +47,15 @@
     "integrationRule": "PyNite must be accessed only through the Core Analysis Adapter boundary.",
     "directCalculatorDependency": "not-required-for-W-section-design-calculator"
   },
-  "nextStageMayBegin": true
+  "nextStageMayBegin": true,
+  "coreAlignmentRecord": {
+    "version": "0.5",
+    "status": "source-and-CI-verified",
+    "contractFile": "backend/app/models/core_contract_v05.py",
+    "endpoint": "POST /api/v1/calculations/w-section/core/v0.5",
+    "tests": "backend/tests/test_core_v05.py",
+    "ciRun": 96,
+    "enginePreserved": true,
+    "productionVerification": "not independently confirmed; do not mark complete without live endpoint and release evidence"
+  }
 }
