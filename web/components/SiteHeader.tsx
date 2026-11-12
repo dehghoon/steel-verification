@@ -1,16 +1,31 @@
+"use client";
+import { useState } from "react";
+const home="https://linkoteq.com";
+const tools=[
+ {name:"3D Model",href:"https://3dmodel.linkoteq.com/",status:"Beta"},
+ {name:"W-Section",href:"https://wsection.linkoteq.com/",status:"Trial"},
+ {name:"Snow Load",href:"https://snow.linkoteq.com/",status:"Trial"}
+] as const;
 export function SiteHeader(){
-  return <header className="globalHeader">
-    <div className="utilityBar">
-      <a className="utilityBrand" href="https://linkoteq.com/" aria-label="LinkoTech home"><img src="/linko-logo-final.svg" alt="LinkoTech Engineering Technology" /></a>
-      <nav className="utilityNav" aria-label="Utility Navigation">
-        <a href="https://linkoteq.com/">Home</a>
-        <div className="navMenu"><button className="navMenuButton" type="button">Contact <span>⌄</span></button><div className="navDropdown"><a href="https://linkoteq.com/contact">Contact Us</a><a href="https://discovery.linkoteq.com/">Customer Discovery</a><a href="https://linkoteq.com/contact/support">Support</a></div></div>
-        <div className="navMenu"><button className="navMenuButton" type="button">About <span>⌄</span></button><div className="navDropdown"><a href="https://linkoteq.com/about">About Linko</a><a href="https://timesheet.linkoteq.com/">Team Timesheet</a></div></div>
-        <a href="https://linkoteq.com/pricing">Pricing</a>
-        <div className="navMenu"><button className="navMenuButton" type="button">Calculators <span>⌄</span></button><div className="navDropdown"><a href="https://wsection.linkoteq.com/">W-Section</a><a href="https://snow.linkoteq.com/">Snow Load</a></div></div>
-      </nav>
-      <div className="navMenu signInMenu"><button className="navCta navMenuButton" type="button">Sign In <span>⌄</span></button><div className="navDropdown signInDropdown"><a href="https://linkoteq.com/blog/login">Employee Workspace</a><a href="https://linkoteq.com/customer-login">Client Workspace</a></div></div>
-    </div>
-    <nav className="primaryBar" aria-label="Primary Navigation"><a href="https://linkoteq.com/">Home</a><a href="https://linkoteq.com/#platform">AI Platform</a><a href="https://linkoteq.com/#roadmap">Roadmap</a><a href="https://linkoteq.com/knowledge/documentation">Knowledge Center</a><a href="https://linkoteq.com/blog">Blog</a></nav>
-  </header>;
+ const [open,setOpen]=useState(false);
+ return <header className="globalHeader">
+  <div className="utilityBar">
+   <a className="utilityBrand" href={home+"/"} aria-label="Linkoteq home"><img src={home+"/linko-logo-final.svg"} alt="LinkoTech Engineering Technology" /></a>
+   <nav className="utilityNav" aria-label="Linkoteq navigation">
+    <a href={home+"/"}>Home</a>
+    <div className="navMenu"><button className="navMenuButton" type="button">Contact ▾</button><div className="navDropdown"><a href={home+"/contact"}>Contact Us</a><a href="https://discovery.linkoteq.com/">Customer Discovery</a><a href={home+"/contact/support"}>Support</a></div></div>
+    <div className="navMenu"><button className="navMenuButton" type="button">About ▾</button><div className="navDropdown"><a href={home+"/about"}>About Linkoteq</a></div></div>
+    <a href={home+"/pricing"}>Pricing</a>
+    <div className="navMenu"><button className="navMenuButton" type="button">Calculators ▾</button><div className="navDropdown">{tools.map(t=><a key={t.name} href={t.href}>{t.name}<span className="toolStatus">{t.status}</span></a>)}</div></div>
+   </nav>
+   <a className="navCta" href={home+"/customer-login"}>Sign In</a>
+   <button type="button" className="mobileMenuToggle" aria-controls="linkoteq-mobile-menu" aria-expanded={open} onClick={()=>setOpen(!open)}>{open?"Close ×":"Menu ☰"}</button>
+  </div>
+  <nav id="linkoteq-mobile-menu" className={open?"mobileMenuPanel isOpen":"mobileMenuPanel"} aria-label="Mobile navigation">
+   <a href={home+"/"}>Home</a><span className="mobileGroupLabel">Engineering software</span>
+   {tools.map(t=><a key={t.name} href={t.href}>{t.name}<span className="toolStatus">{t.status}</span></a>)}
+   <span className="mobileGroupLabel">Explore</span><a href={home+"/blog"}>Blog</a><a href={home+"/knowledge/documentation"}>Documentation</a><a href={home+"/pricing"}>Pricing</a><a href={home+"/about"}>About</a><a href={home+"/contact"}>Contact</a><a href={home+"/customer-login"}>Client Sign In</a>
+  </nav>
+  <nav className="primaryBar" aria-label="Primary navigation"><a href={home+"/"}>Home</a><a href={home+"/#platform"}>AI Platform</a><a href={home+"/#roadmap"}>Roadmap</a><a href={home+"/knowledge/documentation"}>Knowledge Center</a><a href={home+"/blog"}>Blog</a></nav>
+ </header>;
 }
