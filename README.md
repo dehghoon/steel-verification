@@ -27,3 +27,7 @@ See `docs/DEPLOYMENT.md` and `docs/TEST_RESULTS.md`.
 - This is a coordination target only; it does not certify runtime migration, dependency updates, solver support, or deployment.
 - Core `v0.6.0` GitHub Release publication is tracked separately.
 - Existing engineering calculations, detection evidence, and application behavior are unchanged by this documentation-only update.
+
+## Linkoteq Platform Design System (mandatory)
+
+This app MUST comply with [Platform Design System Contract v1](https://github.com/dehghoon/Main-website/blob/design/skyciv-inspired-platform-refresh-20261111/contracts/platform-design-system-v1.md). The official logo is served from `https://linkoteq.com/linko-logo-final.svg`; the shared stylesheet is `https://linkoteq.com/design-system/linkoteq-shell-v1.css` (must be deployed first). All three product links and a mobile toggle are required. This branch still uses a temporary local React header adapter; a reusable centrally versioned component remains a mandatory migration task. Build, mobile and access tests must pass before production.
