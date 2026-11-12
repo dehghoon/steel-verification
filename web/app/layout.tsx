@@ -12,5 +12,5 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><head><link rel="stylesheet" href="https://linkoteq.com/design-system/linkoteq-shell-v1.css" /><link rel="stylesheet" href="/platform-shell-overrides.css" /></head><body>{children}</body></html>;
+  return <html lang="en"><head><script defer src="https://linkoteq.com/design-system/linkoteq-header-v1.js" /></head><body>{children}</body></html>;
 }
