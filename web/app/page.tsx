@@ -1,3 +1,4 @@
+import { createElement } from "react";
 "use client";
 
 import { useCallback, useState } from "react";
@@ -32,7 +33,7 @@ export default function HomePage() {
   const mobileContent = mobileTab === "model" ? model : mobileTab === "input" ? inputs : mobileTab === "results" ? results : report;
 
   return <main>
-    <linkoteq-header />
+    {createElement('linkoteq-header')}
     <section className="toolIdentity"><span className="eyebrow">Structural Steel Design</span><h1>W-Section Verification</h1><span className="codeBadge">CSA S16:2019</span></section>
 
     <nav className="desktopToolTabs" aria-label="Desktop Tool Views">
