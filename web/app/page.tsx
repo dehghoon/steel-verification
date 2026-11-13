@@ -1,5 +1,6 @@
-import { createElement } from "react";
 "use client";
+
+import { createElement } from "react";
 
 import { useCallback, useState } from "react";
 import type { SectionRecord, VerificationResponse } from "@linkoteq/steel-verification-contracts";
