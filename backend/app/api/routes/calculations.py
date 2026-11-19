@@ -5,6 +5,7 @@ from app.models.api import VerificationRequest, VerificationResponse
 from app.models.core_contract import CoreWSectionRequest, CoreWSectionResponse, build_core_response
 from app.models.core_contract_v05 import (
     CoreWSectionV05Request,
+    CoreWSectionV06Request,
     CoreWSectionV05Response,
     build_core_v05_response,
 )
@@ -52,3 +53,8 @@ def calculate_from_core_v05(request: CoreWSectionV05Request) -> CoreWSectionV05R
 
     calculation = _run(request.inputs.verification)
     return build_core_v05_response(request, calculation)
+
+
+@router.post("/w-section/core/v0.6", response_model=CoreWSectionV05Response)
+def calculate_from_core_v06(request: CoreWSectionV06Request) -> CoreWSectionV05Response:
+    return calculate_from_core_v05(request)

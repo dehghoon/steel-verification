@@ -222,3 +222,23 @@ def test_legacy_core_compatibility_endpoint_remains_available(approved_dataset) 
 
     assert response.status_code == 200, response.text
     assert response.json()["modelSchemaVersion"] == "0.4"
+
+
+def test_core_v06_keeps_legacy_results_and_reports_matching_run_version(approved_dataset):
+    configure_dataset(approved_dataset)
+    payload = core_v05_payload()
+    legacy = client.post("/api/v1/calculations/w-section/core/v0.5", json=payload)
+    assert legacy.status_code == 200
+    payload["modelSchemaVersion"] = "0.6"
+    current = client.post("/api/v1/calculations/w-section/core/v0.6", json=payload)
+    assert current.status_code == 200, current.text
+    old, new = legacy.json(), current.json()
+    assert old["modelSchemaVersion"] == "0.5"
+    assert new["modelSchemaVersion"] == "0.6"
+    assert new["designRun"]["modelSchemaVersion"] == "0.6"
+    assert new["memberDesignResults"][0]["checks"] == old["memberDesignResults"][0]["checks"]
+    assert new["memberDesignResults"][0]["utilization"] == old["memberDesignResults"][0]["utilization"]
+    assert new["memberDesignResults"][0]["memberId"] == "M-001"
+    assert next(t for t in new["trace"] if t["stage"] == "core_contract")["schemaVersion"] == "0.6"
+    payload["modelSchemaVersion"] = "0.7"
+    assert client.post("/api/v1/calculations/w-section/core/v0.6", json=payload).status_code == 422
