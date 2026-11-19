@@ -44,6 +44,10 @@ class CoreWSectionV05Request(BaseModel):
     inputs: CoreWSectionInputs
 
 
+class CoreWSectionV06Request(CoreWSectionV05Request):
+    modelSchemaVersion: Literal["0.6"] = "0.6"
+
+
 class CoreDesignCheck(BaseModel):
     id: str
     name: str
@@ -59,7 +63,7 @@ class CoreDesignRun(BaseModel):
     id: str
     calculator: str
     calculatorVersion: str
-    modelSchemaVersion: Literal["0.5"] = CORE_SCHEMA_VERSION
+    modelSchemaVersion: Literal["0.5", "0.6"] = CORE_SCHEMA_VERSION
     targetIds: list[str]
     analysisRunId: str | None = None
     status: Literal["pending", "ok", "warning", "error"]
@@ -92,7 +96,7 @@ class CoreWSectionV05Response(BaseModel):
     """Canonical Core v0.5 CalculatorWriteback specialized for W-section design."""
 
     runId: str
-    modelSchemaVersion: Literal["0.5"] = CORE_SCHEMA_VERSION
+    modelSchemaVersion: Literal["0.5", "0.6"] = CORE_SCHEMA_VERSION
     designRun: CoreDesignRun
     memberDesignResults: list[CoreMemberDesignResult]
     warnings: list[str] = Field(default_factory=list)
@@ -158,7 +162,7 @@ def build_core_v05_response(
         {
             "stage": "core_contract",
             "status": "PASS",
-            "schemaVersion": CORE_SCHEMA_VERSION,
+            "schemaVersion": payload.modelSchemaVersion,
         },
         {
             "stage": "analysis_reference",
@@ -175,6 +179,7 @@ def build_core_v05_response(
     ]
 
     design_run = CoreDesignRun(
+        modelSchemaVersion=payload.modelSchemaVersion,
         id=payload.runId,
         calculator=payload.calculator,
         calculatorVersion=payload.calculatorVersion,
@@ -205,6 +210,7 @@ def build_core_v05_response(
     )
 
     return CoreWSectionV05Response(
+        modelSchemaVersion=payload.modelSchemaVersion,
         runId=payload.runId,
         designRun=design_run,
         memberDesignResults=[member_result],
